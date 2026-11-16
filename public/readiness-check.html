@@ -1,0 +1,650 @@
+<title>Audit Readiness Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<style>
+/* Layout: one reading column. A sticky readiness bar stays on screen while the
+   ledger-style assessment rows are completed below a score summary. */
+:root {
+  --bg: #0F1B2D;
+  --surface: #15243A;
+  --surface-2: #1C2E49;
+  --line: rgba(242, 240, 233, 0.16);
+  --fg: #F2F0E9;
+  --muted: #A9B3C2;
+  --gold: #D4AE2E;
+  --on-gold: #0F1B2D;
+  --brick: #E8735B;
+  --good: #5BBF8A;
+  --focus: #8DBBFF;
+  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #E8ECF2;
+    --line: rgba(15, 27, 45, 0.16); --fg: #0F1B2D; --muted: #4A5568;
+    --gold: #8A6A00; --on-gold: #FFFFFF; --brick: #A63A26; --good: #1F7A4D; --focus: #1D5FBF;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #E8ECF2;
+  --line: rgba(15, 27, 45, 0.16); --fg: #0F1B2D; --muted: #4A5568;
+  --gold: #8A6A00; --on-gold: #FFFFFF; --brick: #A63A26; --good: #1F7A4D; --focus: #1D5FBF;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 var(--font-body);
+  padding-block: 0 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--surface);
+}
+button { font: inherit; color: inherit; }
+button:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+
+
+/* Suite navigation */
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; padding-top: 1rem; }
+.nav .lbl { font: 500 .75rem var(--font-mono); color: var(--muted); letter-spacing: .04em; margin-right: .3rem; }
+.nav a { color: var(--fg); text-decoration: none; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: .25rem .8rem; font-size: .875rem; }
+.nav a:hover { border-color: var(--gold); }
+.nav a[aria-current="page"] { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-weight: 600; }
+.nav a:focus-visible, .xlink a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.xlink { margin: 0; color: var(--muted); font-size: .9375rem; }
+.xlink a { color: var(--gold); }
+
+/* Sticky readiness bar */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  padding: .6rem .75rem; margin-inline: -.75rem;
+}
+.bar strong { font: 600 1.25rem var(--font-display); font-variant-numeric: tabular-nums; }
+.bar span { color: var(--muted); font-size: .875rem; }
+
+/* Header */
+.head { display: grid; gap: .75rem; padding-top: 1.5rem; }
+.kicker { margin: 0; font: 500 .8125rem var(--font-mono); color: var(--gold); letter-spacing: .02em; }
+h1 { margin: 0; font: 600 clamp(2.1rem, 6vw, 3.1rem)/1.08 var(--font-display); text-wrap: balance; }
+.lede { margin: 0; max-width: 60ch; color: var(--muted); font-size: 1.0625rem; }
+
+/* Example banner */
+.example {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem;
+  border: 1px solid var(--gold); border-radius: 8px; padding: .75rem 1rem; background: var(--surface);
+}
+.example p { margin: 0; flex: 1 1 18rem; min-width: 0; font-size: .9375rem; }
+.btn {
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px;
+  padding: .45rem .85rem; cursor: pointer; font-size: .9rem;
+}
+.btn:hover { border-color: var(--gold); }
+.btn.primary { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-weight: 600; }
+
+/* Summary */
+.summary { display: grid; gap: 1.5rem; }
+.score-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.5rem; }
+.score { font: 600 clamp(3.5rem, 12vw, 5.5rem)/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.score small { font-size: .4em; color: var(--muted); margin-left: .1em; }
+.band-text { flex: 1 1 16rem; min-width: 0; }
+.band { margin: 0; font: 600 1.375rem/1.2 var(--font-display); }
+.band-note { margin: .25rem 0 0; color: var(--muted); }
+
+.meter { position: relative; height: 10px; background: var(--surface-2); border-radius: 5px; margin-bottom: 1.5rem; }
+.meter-fill { position: absolute; inset: 0 auto 0 0; background: var(--gold); border-radius: 5px; transition: width .3s ease; }
+.tick { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--fg); opacity: .5; }
+.tick-label { position: absolute; top: 16px; transform: translateX(-50%); font: .75rem var(--font-mono); color: var(--muted); }
+.tick-label.end { transform: none; right: 0; }
+.tick-label.start { transform: none; left: 0; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; margin: 0; }
+.stats div { border-top: 1px solid var(--line); padding-top: .5rem; min-width: 0; }
+.stats dt { color: var(--muted); font-size: .875rem; }
+.stats dd { margin: 0; font: 600 1.375rem var(--font-display); font-variant-numeric: tabular-nums; }
+
+h2 { margin: 0; font: 600 1.375rem/1.2 var(--font-display); }
+.sec-note { margin: .25rem 0 0; color: var(--muted); font-size: .9375rem; }
+
+/* Area scores */
+.areas { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; }
+.arow {
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr) 3rem; gap: .25rem 1rem; align-items: center;
+  padding: .6rem 0; border-top: 1px solid var(--line);
+}
+.arow .nm { min-width: 0; }
+.arow .nm b { font-weight: 500; }
+.arow .nm span { display: block; color: var(--muted); font-size: .8125rem; }
+.abar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.abar i { display: block; height: 100%; background: var(--gold); transition: width .3s ease; }
+.apct { text-align: right; font: 500 .9375rem var(--font-mono); font-variant-numeric: tabular-nums; }
+.open-pill { grid-column: 1 / -1; font-size: .8125rem; color: var(--brick); }
+@media (max-width: 560px) {
+  .arow { grid-template-columns: minmax(0, 1fr) 3rem; }
+  .arow .abar { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* Assessment */
+.group { display: grid; gap: .75rem; }
+.area { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.area > summary {
+  list-style: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .15rem 1rem; align-items: center;
+  padding: .9rem 1rem; cursor: pointer;
+}
+.area > summary::-webkit-details-marker { display: none; }
+.area > summary .t { font: 600 1.125rem var(--font-display); }
+.area > summary .m { color: var(--muted); font-size: .875rem; grid-column: 1; }
+.area > summary .s { grid-column: 2; grid-row: 1 / span 2; font: 500 1rem var(--font-mono); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: .6rem; }
+.chev { width: .6rem; height: .6rem; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s ease; margin-bottom: .2rem; }
+details[open] > summary .chev { transform: rotate(-135deg); margin-bottom: -.2rem; }
+.items { padding: 0 1rem .5rem; }
+.item { padding: 1rem 0; border-top: 1px solid var(--line); display: grid; gap: .5rem; }
+.item-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .6rem; }
+.ref { font: 500 .8125rem var(--font-mono); color: var(--gold); }
+.tag { font-size: .75rem; border: 1px solid var(--brick); color: var(--brick); padding: 0 .5rem; border-radius: 999px; }
+.q { margin: 0; font-size: 1.0625rem; }
+.ev { margin: 0; color: var(--muted); font-size: .875rem; }
+.seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .375rem; margin-top: .25rem; }
+.opt { position: relative; }
+.opt input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.opt label {
+  display: block; text-align: center; padding: .5rem .25rem; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--surface-2); font-size: .875rem; cursor: pointer;
+}
+.opt label:hover { border-color: var(--gold); }
+.opt input:checked + label { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-weight: 600; }
+.opt input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (max-width: 520px) { .seg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.rv { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: .5rem .75rem; margin-top: .25rem; }
+.rv label { display: grid; gap: .2rem; font-size: .8125rem; color: var(--muted); min-width: 0; }
+.rv input { width: 100%; min-width: 0; font: inherit; font-size: .9375rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: .45rem .55rem; }
+.rv input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rv-note { grid-column: 1 / -1; margin: 0; font-size: .8125rem; color: var(--muted); }
+.rv-note.warn { color: var(--brick); }
+@media (max-width: 520px) { .rv { grid-template-columns: minmax(0, 1fr); } }
+.tools { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+/* Gaps */
+.gaps { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; }
+.gap { display: grid; gap: .25rem; padding: .9rem 0; border-top: 1px solid var(--line); }
+.gap-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .6rem; }
+.lvl { margin-left: auto; font-size: .8125rem; color: var(--muted); }
+.gap p { margin: 0; }
+.gap .next { color: var(--muted); font-size: .9375rem; }
+.gap-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: 1rem; }
+.status { color: var(--muted); font-size: .875rem; }
+textarea#fallback { width: 100%; min-height: 8rem; margin-top: .75rem; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: .6rem; font: .8125rem/1.5 var(--font-mono); }
+.empty { color: var(--muted); margin: 1rem 0 0; }
+.foot { color: var(--muted); font-size: .875rem; border-top: 1px solid var(--line); padding-top: 1rem; max-width: 64ch; }
+@media (prefers-reduced-motion: reduce) {
+  .meter-fill, .abar i, .chev { transition: none; }
+}
+
+.nav .tt { margin-left: auto; font: inherit; font-size: .875rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: .25rem .8rem; cursor: pointer; }
+.nav .tt:hover { border-color: var(--gold); }
+.nav .tt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <nav class="nav" aria-label="GRC tools"><span class="lbl">GRC TOOLS</span><a href="/">Start here</a><a href="/readiness-check" aria-current="page">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
+<script>
+(function () {
+  var KEY = 'grc-theme', root = document.documentElement, btn = document.getElementById('themeBtn');
+  function stored() { try { var v = localStorage.getItem(KEY); return v === 'light' || v === 'dark' ? v : ''; } catch (e) { return ''; } }
+  function system() { try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'; } catch (e) { return 'dark'; } }
+  function current() { return root.getAttribute('data-theme') || system(); }
+  function label() { if (btn) { var next = current() === 'light' ? 'dark' : 'light'; btn.textContent = next === 'light' ? 'Light mode' : 'Dark mode'; btn.setAttribute('aria-label', 'Switch to ' + next + ' theme'); } }
+  var s = stored(); if (s) root.setAttribute('data-theme', s);
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = current() === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem(KEY, next); } catch (e) { /* ignore */ }
+    label();
+  });
+})();
+</script>
+
+
+  <div class="bar" aria-live="polite">
+    <strong id="barScore">0%</strong>
+    <span id="barBand">Readiness</span>
+    <span id="barRated"></span>
+  </div>
+
+  <header class="head">
+    <p class="kicker">ISO/IEC 27001:2022 self-assessment</p>
+    <h1>Audit Readiness Check</h1>
+    <p class="lede">Rate where each requirement stands today. You get a readiness score, a ranked list of gaps and the evidence an auditor is likely to ask for. Evidence only counts as Evidenced when someone owns it and has reviewed it in the last 12 months.</p>
+  </header>
+
+  <div class="example" id="example" role="status" hidden>
+    <p>These are example answers for a mid-sized software company. Change any item, or clear them to assess your own organisation.</p>
+    <button type="button" class="btn primary" id="clearExample">Clear and start mine</button>
+  </div>
+
+  <section class="summary" aria-labelledby="sumH">
+    <h2 id="sumH" class="sr" style="position:absolute;left:-9999px">Readiness summary</h2>
+    <div class="score-row">
+      <div class="score"><span id="score">0</span><small>%</small></div>
+      <div class="band-text">
+        <p class="band" id="band"></p>
+        <p class="band-note" id="bandNote"></p>
+      </div>
+    </div>
+    <div class="meter" role="img" aria-label="Readiness meter with thresholds at 35, 65 and 85 percent" id="meter">
+      <div class="meter-fill" id="meterFill"></div>
+      <span class="tick" style="left:35%"></span><span class="tick" style="left:65%"></span><span class="tick" style="left:85%"></span>
+      <span class="tick-label start">0</span>
+      <span class="tick-label" style="left:35%">35</span>
+      <span class="tick-label" style="left:65%">65</span>
+      <span class="tick-label" style="left:85%">85</span>
+      <span class="tick-label end">100</span>
+    </div>
+    <dl class="stats">
+      <div><dt>Items rated</dt><dd id="stRated"></dd></div>
+      <div><dt>Evidenced and reviewed</dt><dd id="stEvid"></dd></div>
+      <div><dt>Evidenced, review missing or old</dt><dd id="stStale"></dd></div>
+      <div><dt>Required items not yet evidenced</dt><dd id="stReq"></dd></div>
+    </dl>
+    <div>
+      <h2>Score by area</h2>
+      <ol class="areas" id="areas"></ol>
+    </div>
+  </section>
+
+  <section class="group" aria-labelledby="clH">
+    <div>
+      <h2 id="clH">Management system requirements</h2>
+      <p class="sec-note">Clauses 4 to 10. Items marked Required are ones where the standard calls for documented information.</p>
+    </div>
+    <div class="tools">
+      <button type="button" class="btn" id="expand">Expand all</button>
+      <button type="button" class="btn" id="collapse">Collapse all</button>
+    </div>
+    <div id="groupM" class="group"></div>
+  </section>
+
+  <section class="group" aria-labelledby="anH">
+    <div>
+      <h2 id="anH">Annex A controls</h2>
+      <p class="sec-note">A selection of the controls auditors sample most often. Your Statement of Applicability decides which controls apply to you.</p>
+    </div>
+    <div id="groupA" class="group"></div>
+  </section>
+
+  <section aria-labelledby="gapH">
+    <h2 id="gapH">Priority gaps</h2>
+    <p class="sec-note">Required items come first, then the lowest-rated items. Anything below Evidenced appears here.</p>
+    <ol class="gaps" id="gaps"></ol>
+    <div class="gap-actions">
+      <button type="button" class="btn" id="toggleGaps" hidden>Show all gaps</button>
+      <button type="button" class="btn primary" id="copy">Copy action list</button>
+      <span class="status" id="copyStatus" role="status"></span>
+    </div>
+    <textarea id="fallback" readonly hidden aria-label="Action list text"></textarea>
+    <p class="xlink" style="margin-top:1rem">Next step: record which controls apply and why in the <a href="/soa-builder">Statement of Applicability builder</a>, then track the documents behind them in the <a href="/documents">document checklist</a>.</p>
+  </section>
+
+  <section class="group">
+    <div class="tools">
+      <button type="button" class="btn" id="reset">Clear all answers</button>
+    </div>
+    <p class="foot">This check supports preparation. It does not replace an audit by a certification body. Questions summarise the intent of the standard and are not its text. A review date older than 12 months, or no named reviewer, moves an Evidenced item back to In place for scoring. Answers stay in this browser only.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'audit-readiness-v1';
+  var LEVELS = [
+    { v: 0, l: 'Not started' },
+    { v: 1, l: 'In progress' },
+    { v: 2, l: 'In place' },
+    { v: 3, l: 'Evidenced' }
+  ];
+  var AREAS = [
+    { id: 'c4', g: 'm', name: 'Context of the organisation', ref: 'Clause 4' },
+    { id: 'c5', g: 'm', name: 'Leadership', ref: 'Clause 5' },
+    { id: 'c6', g: 'm', name: 'Planning', ref: 'Clause 6' },
+    { id: 'c7', g: 'm', name: 'Support', ref: 'Clause 7' },
+    { id: 'c8', g: 'm', name: 'Operation', ref: 'Clause 8' },
+    { id: 'c9', g: 'm', name: 'Performance evaluation', ref: 'Clause 9' },
+    { id: 'c10', g: 'm', name: 'Improvement', ref: 'Clause 10' },
+    { id: 'a5', g: 'a', name: 'Organisational controls', ref: 'Annex A.5' },
+    { id: 'a6', g: 'a', name: 'People controls', ref: 'Annex A.6' },
+    { id: 'a7', g: 'a', name: 'Physical controls', ref: 'Annex A.7' },
+    { id: 'a8', g: 'a', name: 'Technological controls', ref: 'Annex A.8' }
+  ];
+  var ITEMS = [
+    { ar: 'c4', r: '4.1', q: 'We have identified the internal and external issues that affect our ISMS.', e: 'context analysis with a review date' },
+    { ar: 'c4', r: '4.2', q: 'Interested parties and their security requirements, including legal and contractual ones, are identified.', e: 'interested parties register and legal and contractual requirements list' },
+    { ar: 'c4', r: '4.3', q: 'The scope of the ISMS is defined, with its boundaries and interfaces.', e: 'scope statement', req: true },
+
+    { ar: 'c5', r: '5.1', q: 'Top management leads the ISMS and provides the resources it needs.', e: 'management review minutes and budget approvals' },
+    { ar: 'c5', r: '5.2', q: 'An information security policy is approved by top management and communicated.', e: 'approved policy and communication or acknowledgement records', req: true },
+    { ar: 'c5', r: '5.3', q: 'Roles, responsibilities and authorities for information security are assigned and communicated.', e: 'role descriptions or a responsibility matrix' },
+
+    { ar: 'c6', r: '6.1.2', q: 'A risk assessment process sets criteria for risk acceptance and for carrying out assessments.', e: 'risk assessment methodology', req: true },
+    { ar: 'c6', r: '6.1.3', q: 'A risk treatment process selects treatment options and the controls needed.', e: 'risk treatment methodology', req: true },
+    { ar: 'c6', r: '6.1.3', q: 'A Statement of Applicability lists the necessary controls, whether each is implemented, and the reason for any exclusion.', e: 'approved Statement of Applicability', req: true },
+    { ar: 'c6', r: '6.1.3', q: 'A risk treatment plan exists, and risk owners have approved it and accepted residual risk.', e: 'risk treatment plan with owner approvals', w: 2 },
+    { ar: 'c6', r: '6.2', q: 'Measurable security objectives are set, with owners, timelines and a way to measure them.', e: 'objectives register', req: true },
+    { ar: 'c6', r: '6.3', q: 'Changes to the ISMS are planned and carried out in a controlled way.', e: 'change records for the ISMS' },
+
+    { ar: 'c7', r: '7.1', q: 'The resources needed for the ISMS are determined and provided.', e: 'budget and staffing records' },
+    { ar: 'c7', r: '7.2', q: 'The competence of people who affect security is determined and evidenced.', e: 'training records, qualifications and certificates', req: true },
+    { ar: 'c7', r: '7.3', q: 'Staff know the policy, how they contribute and what non-conformance means.', e: 'awareness programme with attendance or test results' },
+    { ar: 'c7', r: '7.4', q: 'Internal and external communication about the ISMS is planned.', e: 'communication plan' },
+    { ar: 'c7', r: '7.5', q: 'Documented information is controlled: identified, approved, versioned, protected and retained.', e: 'document control procedure and version history' },
+
+    { ar: 'c8', r: '8.1', q: 'Planned processes are operated and controlled, and outsourced processes are identified and controlled.', e: 'operating procedures and records showing they were followed', req: true },
+    { ar: 'c8', r: '8.2', q: 'Risk assessments are performed at planned intervals and after significant change, and the results are kept.', e: 'dated risk assessment reports and risk register', req: true },
+    { ar: 'c8', r: '8.3', q: 'The risk treatment plan is implemented and the results are kept.', e: 'treatment progress records and control implementation evidence', req: true },
+
+    { ar: 'c9', r: '9.1', q: 'Security performance and ISMS effectiveness are monitored, measured and analysed.', e: 'metrics, reports and analysis', req: true },
+    { ar: 'c9', r: '9.2', q: 'An internal audit programme covers the whole ISMS, uses impartial auditors and reports results.', e: 'audit programme, audit reports and auditor competence records', req: true },
+    { ar: 'c9', r: '9.3', q: 'Top management reviews the ISMS at planned intervals with all required inputs and records its decisions.', e: 'management review minutes covering the required inputs', req: true },
+
+    { ar: 'c10', r: '10.1', q: 'The ISMS is continually improved.', e: 'improvement log with completed actions' },
+    { ar: 'c10', r: '10.2', q: 'Nonconformities are corrected, root causes are addressed and corrective actions are recorded.', e: 'corrective action register', req: true },
+
+    { ar: 'a5', r: 'A.5.1', q: 'Topic-specific policies are approved, published and reviewed.', e: 'policy set with owners and review dates' },
+    { ar: 'a5', r: 'A.5.7', q: 'Information about security threats is collected and analysed.', e: 'threat intelligence sources and analysis records' },
+    { ar: 'a5', r: 'A.5.9', q: 'An inventory of information and associated assets exists, with owners.', e: 'asset register' },
+    { ar: 'a5', r: 'A.5.15 to A.5.18', q: 'Access rules, user provisioning and periodic access reviews are in place.', e: 'access control policy, joiner mover leaver records and access review logs' },
+    { ar: 'a5', r: 'A.5.19 to A.5.22', q: 'Supplier security requirements are set, agreed and monitored.', e: 'supplier register, due diligence records and contracts' },
+    { ar: 'a5', r: 'A.5.23', q: 'Use of cloud services is managed from selection through to exit.', e: 'cloud service policy and provider assessments' },
+    { ar: 'a5', r: 'A.5.24 to A.5.28', q: 'An incident management process covers planning, assessment, response and learning.', e: 'incident procedure, incident log and post-incident reviews' },
+    { ar: 'a5', r: 'A.5.29, A.5.30', q: 'Security during disruption and ICT readiness for continuity are planned and tested.', e: 'continuity and recovery plans with test results' },
+    { ar: 'a5', r: 'A.5.31, A.5.34', q: 'Legal and regulatory requirements, including privacy and personal data protection, are identified and met.', e: 'legal register, compliance reviews and privacy assessments' },
+
+    { ar: 'a6', r: 'A.6.1, A.6.2', q: 'Background screening and terms of employment cover information security.', e: 'screening records and signed contracts' },
+    { ar: 'a6', r: 'A.6.3', q: 'Security awareness and training is delivered and tracked.', e: 'training plan, completion records and phishing test results' },
+    { ar: 'a6', r: 'A.6.5, A.6.6', q: 'Leavers lose access promptly and confidentiality agreements are in place.', e: 'leaver checklists and signed confidentiality agreements' },
+
+    { ar: 'a7', r: 'A.7.1 to A.7.4', q: 'Physical perimeters, entry controls and monitoring protect facilities.', e: 'access logs, visitor records and monitoring arrangements' },
+    { ar: 'a7', r: 'A.7.9, A.7.10, A.7.14', q: 'Off-site equipment, storage media and equipment disposal are controlled.', e: 'media handling and disposal records' },
+
+    { ar: 'a8', r: 'A.8.2, A.8.5', q: 'Privileged access and secure authentication, including multi-factor authentication, are managed.', e: 'privileged account list and authentication settings' },
+    { ar: 'a8', r: 'A.8.7', q: 'Protection against malware is deployed and kept up to date.', e: 'endpoint protection coverage and update reports' },
+    { ar: 'a8', r: 'A.8.8', q: 'Technical vulnerabilities are found, assessed and fixed within defined timelines.', e: 'scan reports, patch records and remediation timelines' },
+    { ar: 'a8', r: 'A.8.13', q: 'Backups are taken, protected and restore-tested.', e: 'backup logs and restore test records' },
+    { ar: 'a8', r: 'A.8.15', q: 'Security-relevant events are logged and the logs are reviewed.', e: 'log retention settings and review records' },
+    { ar: 'a8', r: 'A.8.20 to A.8.22', q: 'Networks are secured, network services are managed and networks are segregated.', e: 'network diagrams and firewall rule reviews' },
+    { ar: 'a8', r: 'A.8.24', q: 'Cryptography is governed by a policy that covers key management.', e: 'cryptography policy and key management records' },
+    { ar: 'a8', r: 'A.8.32', q: 'Changes to systems follow a controlled change process.', e: 'change tickets and approvals' }
+  ];
+  ITEMS.forEach(function (it, i) { it.id = 'i' + i; it.idx = i; it.w = it.w || (it.req ? 2 : 1); });
+  var SAMPLE = [3,2,3, 2,3,2, 3,2,1,1,2,1, 2,2,3,2,2, 2,1,1, 1,1,0, 1,1,
+                3,1,2,2,1,1,2,1,2, 3,3,2, 2,2, 2,3,1,3,2,1,1,2];
+
+  var state = { a: {}, m: {}, ex: false };
+  var showAll = false;
+
+  function isoDaysAgo(n) {
+    var d = new Date(); d.setDate(d.getDate() - n);
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  function sampleState() {
+    var a = {}, m = {}, k = 0;
+    var who = ['ISMS manager', 'IT lead', 'HR lead', 'Facilities lead'];
+    var ago = [20, 45, 70, 100, 150, 30, 400, 200, 60, 90];
+    if (SAMPLE.length === ITEMS.length) ITEMS.forEach(function (it, i) {
+      a[it.id] = SAMPLE[i];
+      if (SAMPLE[i] === 3) {
+        k++;
+        if (k === 4 || k === 8) return;           /* evidenced, but no reviewer or date */
+        m[it.id] = { by: who[k % who.length], on: isoDaysAgo(ago[k % ago.length]) };
+      }
+    });
+    return { a: a, m: m, ex: true };
+  }
+  function reviewOk(id) {
+    var r = state.m[id];
+    if (!r || !r.by || !r.by.trim() || !r.on) return false;
+    var t = Date.parse(r.on + 'T00:00:00');
+    if (isNaN(t)) return false;
+    var age = (Date.now() - t) / 86400000;
+    return age >= -1 && age <= 365;
+  }
+  function eff(it) {
+    var v = state.a[it.id];
+    return (v === 3 && !reviewOk(it.id)) ? 2 : v;
+  }
+  function needsReview(it) { return state.a[it.id] === 3 && !reviewOk(it.id); }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && p.ex && !p.m) return sampleState();
+        if (p && typeof p.a === 'object') return { a: p.a, m: (p.m && typeof p.m === 'object') ? p.m : {}, ex: !!p.ex };
+      }
+    } catch (e) { /* storage unavailable */ }
+    return sampleState();
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  }
+
+  function el(id) { return document.getElementById(id); }
+  function pct(n) { return Math.round(n); }
+  function lvlLabel(v, it) { if (v === 3 && it && needsReview(it)) return 'Evidenced, review needed'; return v === undefined ? 'Not rated' : LEVELS[v].l; }
+
+  /* Build the assessment */
+  function build() {
+    var gm = el('groupM'), ga = el('groupA');
+    AREAS.forEach(function (ar, ai) {
+      var d = document.createElement('details');
+      d.className = 'area';
+      d.id = 'area-' + ar.id;
+      if (ai === 0) d.open = true;
+      var html = '<summary><span class="t">' + ar.name + '</span><span class="m" data-m="' + ar.id + '"></span>' +
+        '<span class="s"><span data-s="' + ar.id + '"></span><span class="chev" aria-hidden="true"></span></span></summary><div class="items">';
+      ITEMS.filter(function (it) { return it.ar === ar.id; }).forEach(function (it) {
+        html += '<div class="item" id="' + it.id + '"><div class="item-top"><span class="ref">' + it.r + '</span>' +
+          (it.req ? '<span class="tag">Required document</span>' : '') + '</div>' +
+          '<p class="q" id="q-' + it.id + '">' + it.q + '</p>' +
+          '<p class="ev">Auditors will ask for: ' + it.e + '.</p>' +
+          '<div class="seg" role="radiogroup" aria-labelledby="q-' + it.id + '">';
+        LEVELS.forEach(function (lv) {
+          var rid = 'r-' + it.id + '-' + lv.v;
+          html += '<span class="opt"><input type="radio" name="n-' + it.id + '" id="' + rid + '" value="' + lv.v + '">' +
+            '<label for="' + rid + '">' + lv.l + '</label></span>';
+        });
+        html += '</div><div class="rv"><label>Reviewed by<input type="text" id="by-' + it.id + '" data-rv="by" data-id="' + it.id + '" maxlength="60" autocomplete="off" placeholder="Name or role"></label>' +
+          '<label>Last reviewed<input type="date" id="on-' + it.id + '" data-rv="on" data-id="' + it.id + '"></label>' +
+          '<p class="rv-note" id="rn-' + it.id + '"></p></div></div>';
+      });
+      html += '</div>';
+      d.innerHTML = html;
+      (ar.g === 'm' ? gm : ga).appendChild(d);
+    });
+    var rows = '';
+    AREAS.forEach(function (ar) {
+      rows += '<li class="arow"><div class="nm"><b>' + ar.name + '</b><span>' + ar.ref + '</span></div>' +
+        '<div class="abar" role="img" aria-label="' + ar.name + ' score"><i data-b="' + ar.id + '" style="width:0"></i></div>' +
+        '<div class="apct" data-p="' + ar.id + '">0%</div><div class="open-pill" data-o="' + ar.id + '" hidden></div></li>';
+    });
+    el('areas').innerHTML = rows;
+  }
+
+  function calc() {
+    var per = {}, stale = 0, sw = 0, sv = 0, rated = 0, evid = 0, reqOpen = 0, reqTotal = 0, blockers = 0;
+    AREAS.forEach(function (a) { per[a.id] = { sw: 0, sv: 0, rated: 0, n: 0, reqOpen: 0 }; });
+    ITEMS.forEach(function (it) {
+      var v = state.a[it.id], e = eff(it), val = e === undefined ? 0 : e, p = per[it.ar];
+      p.n++; p.sw += it.w; p.sv += it.w * val / 3; sw += it.w; sv += it.w * val / 3;
+      if (v !== undefined) { rated++; p.rated++; }
+      if (e === 3) evid++; if (needsReview(it)) stale++;
+      if (it.req) { reqTotal++; if (val < 3) { reqOpen++; p.reqOpen++; } if (val < 2) blockers++; }
+    });
+    return { stale: stale, per: per, score: sw ? sv / sw * 100 : 0, rated: rated, evid: evid, reqOpen: reqOpen, reqTotal: reqTotal, blockers: blockers };
+  }
+
+  function bandFor(c) {
+    if (c.rated === 0) return { t: 'Rate items to see your readiness', n: 'Start with the Required items in clauses 4 to 10.' };
+    if (c.score >= 85 && c.blockers === 0) return { t: 'Ready for audit', n: 'Most items are evidenced. Keep records current and run a final internal review.' };
+    if (c.score >= 65) return { t: 'Nearly ready', n: c.blockers > 0
+      ? c.blockers + (c.blockers === 1 ? ' required item still needs' : ' required items still need') + ' work before a certification audit.'
+      : 'Close the remaining gaps and collect evidence for items that are in place.' };
+    if (c.score >= 35) return { t: 'Building', n: 'Core elements are partly in place. Focus on the Required items first.' };
+    return { t: 'Early stage', n: 'Start with scope, policy, risk method and the Statement of Applicability.' };
+  }
+
+  function nextStep(it, v) {
+    if (v === 3 && needsReview(it)) return 'Add a named reviewer and a review date from the last 12 months for: ' + it.e + '.';
+    if (v === undefined || v === 0) return 'Produce: ' + it.e + '.';
+    if (v === 1) return 'Complete and approve: ' + it.e + '.';
+    return 'Collect proof: ' + it.e + '.';
+  }
+
+  function gapsList() {
+    return ITEMS.filter(function (it) { return eff(it) !== 3; }).sort(function (a, b) {
+      var va = eff(a) || 0, vb = eff(b) || 0;
+      return ((b.req ? 1 : 0) - (a.req ? 1 : 0)) || (b.w - a.w) || (va - vb) || (a.idx - b.idx);
+    });
+  }
+
+  function update() {
+    var c = calc(), b = bandFor(c);
+    el('score').textContent = pct(c.score);
+    el('barScore').textContent = pct(c.score) + '%';
+    el('barBand').textContent = b.t;
+    el('barRated').textContent = c.rated + ' of ' + ITEMS.length + ' rated';
+    el('band').textContent = b.t;
+    el('bandNote').textContent = b.n;
+    el('meterFill').style.width = Math.min(100, c.score) + '%';
+    el('stRated').textContent = c.rated + ' of ' + ITEMS.length;
+    el('stEvid').textContent = c.evid;
+    el('stStale').textContent = c.stale;
+    el('stReq').textContent = c.reqOpen + ' of ' + c.reqTotal;
+    el('example').hidden = !state.ex;
+
+    AREAS.forEach(function (ar) {
+      var p = c.per[ar.id], s = p.sw ? pct(p.sv / p.sw * 100) : 0;
+      document.querySelector('[data-b="' + ar.id + '"]').style.width = s + '%';
+      document.querySelector('[data-p="' + ar.id + '"]').textContent = s + '%';
+      var o = document.querySelector('[data-o="' + ar.id + '"]');
+      o.hidden = p.reqOpen === 0;
+      o.textContent = p.reqOpen + (p.reqOpen === 1 ? ' required item not yet evidenced' : ' required items not yet evidenced');
+      document.querySelector('[data-s="' + ar.id + '"]').textContent = s + '%';
+      document.querySelector('[data-m="' + ar.id + '"]').textContent = ar.ref + ', ' + p.rated + ' of ' + p.n + ' rated';
+    });
+
+    ITEMS.forEach(function (it) {
+      var v = state.a[it.id];
+      LEVELS.forEach(function (lv) { el('r-' + it.id + '-' + lv.v).checked = (v === lv.v); });
+      var r = state.m[it.id] || {}, bi = el('by-' + it.id), oi = el('on-' + it.id), rn = el('rn-' + it.id);
+      if (document.activeElement !== bi && bi.value !== (r.by || '')) bi.value = r.by || '';
+      if (document.activeElement !== oi && oi.value !== (r.on || '')) oi.value = r.on || '';
+      if (v === 3) {
+        rn.className = 'rv-note' + (reviewOk(it.id) ? '' : ' warn');
+        rn.textContent = reviewOk(it.id) ? 'Reviewed and owned. This counts as Evidenced.'
+          : 'Add a reviewer and a review date within the last 12 months. Until then this scores as In place.';
+      } else { rn.className = 'rv-note'; rn.textContent = 'Optional until you rate this item Evidenced.'; }
+    });
+
+    var g = gapsList(), shown = showAll ? g : g.slice(0, 8), html = '';
+    shown.forEach(function (it) {
+      var v = state.a[it.id];
+      html += '<li class="gap"><div class="gap-top"><span class="ref">' + it.r + '</span>' +
+        (it.req ? '<span class="tag">Required document</span>' : '') +
+        '<span class="lvl">' + lvlLabel(v, it) + '</span></div><p>' + it.q + '</p><p class="next">' + nextStep(it, v) + '</p></li>';
+    });
+    el('gaps').innerHTML = g.length ? html : '';
+    var tg = el('toggleGaps');
+    tg.hidden = g.length <= 8;
+    tg.textContent = showAll ? 'Show top 8 only' : 'Show all ' + g.length + ' gaps';
+    el('copy').hidden = g.length === 0;
+    if (!g.length) el('gaps').innerHTML = '<li class="empty">Every item is evidenced. Nothing to action.</li>';
+  }
+
+  function actionText() {
+    var c = calc(), b = bandFor(c), g = gapsList();
+    var out = ['ISO/IEC 27001:2022 audit readiness: ' + pct(c.score) + '% (' + b.t + ')',
+      c.rated + ' of ' + ITEMS.length + ' items rated. Required items not yet evidenced: ' + c.reqOpen + ' of ' + c.reqTotal + '. Evidenced items with a missing or old review: ' + c.stale + '.',
+      '', 'Priority actions'];
+    g.forEach(function (it, i) {
+      out.push((i + 1) + '. [' + it.r + '] ' + nextStep(it, state.a[it.id]) + (it.req ? ' (required)' : ''));
+    });
+    return out.join('\n');
+  }
+
+  function copy() {
+    var text = actionText(), st = el('copyStatus'), fb = el('fallback');
+    function fallback() {
+      fb.hidden = false; fb.value = text; fb.focus(); fb.select();
+      st.textContent = 'Select and copy the text below.';
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        fb.hidden = true; st.textContent = 'Copied';
+        setTimeout(function () { st.textContent = ''; }, 2500);
+      }, fallback);
+    } catch (e) { fallback(); }
+  }
+
+  var resetTimer = null;
+  function reset() {
+    var b = el('reset');
+    if (b.dataset.arm === '1') {
+      state = { a: {}, m: {}, ex: false }; save(); showAll = false; update();
+      b.dataset.arm = ''; b.textContent = 'Clear all answers'; clearTimeout(resetTimer);
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    b.dataset.arm = '1'; b.textContent = 'Click again to clear everything';
+    resetTimer = setTimeout(function () { b.dataset.arm = ''; b.textContent = 'Clear all answers'; }, 4000);
+  }
+
+  function setAll(open) {
+    document.querySelectorAll('details.area').forEach(function (d) { d.open = open; });
+  }
+
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t && t.getAttribute && t.getAttribute('data-rv')) {
+      var id = t.getAttribute('data-id'), k = t.getAttribute('data-rv');
+      state.m[id] = state.m[id] || { by: '', on: '' };
+      state.m[id][k] = t.value;
+      state.ex = false;
+      save(); update();
+    }
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t && t.type === 'radio' && t.name && t.name.indexOf('n-') === 0) {
+      state.a[t.name.slice(2)] = +t.value;
+      state.ex = false;
+      save(); update();
+    }
+  });
+  el('clearExample').addEventListener('click', function () { state = { a: {}, m: {}, ex: false }; save(); update(); });
+  el('toggleGaps').addEventListener('click', function () { showAll = !showAll; update(); });
+  el('copy').addEventListener('click', copy);
+  el('reset').addEventListener('click', reset);
+  el('expand').addEventListener('click', function () { setAll(true); });
+  el('collapse').addEventListener('click', function () { setAll(false); });
+
+  state = load();
+  build();
+  update();
+})();
+</script>

@@ -1,0 +1,575 @@
+<title>AI Vendor Checker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<style>
+
+
+:root {
+  --bg: #0F1B2D;
+  --surface: #15243A;
+  --surface-2: #1C2E49;
+  --line: rgba(242, 240, 233, 0.16);
+  --fg: #F2F0E9;
+  --muted: #A9B3C2;
+  --gold: #D4AE2E;
+  --on-gold: #0F1B2D;
+  --brick: #E8735B;
+  --good: #5BBF8A;
+  --focus: #8DBBFF;
+  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #E8ECF2;
+    --line: rgba(15, 27, 45, 0.16); --fg: #0F1B2D; --muted: #4A5568;
+    --gold: #8A6A00; --on-gold: #FFFFFF; --brick: #A63A26; --good: #1F7A4D; --focus: #1D5FBF;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #E8ECF2;
+  --line: rgba(15, 27, 45, 0.16); --fg: #0F1B2D; --muted: #4A5568;
+  --gold: #8A6A00; --on-gold: #FFFFFF; --brick: #A63A26; --good: #1F7A4D; --focus: #1D5FBF;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 var(--font-body);
+  padding-block: 0 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--surface);
+}
+button { font: inherit; color: inherit; }
+button:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+
+/* Sticky readiness bar */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  padding: .6rem .75rem; margin-inline: -.75rem;
+}
+.bar strong { font: 600 1.25rem var(--font-display); font-variant-numeric: tabular-nums; }
+.bar span { color: var(--muted); font-size: .875rem; }
+
+/* Header */
+.head { display: grid; gap: .75rem; padding-top: 1.5rem; }
+.kicker { margin: 0; font: 500 .8125rem var(--font-mono); color: var(--gold); letter-spacing: .02em; }
+h1 { margin: 0; font: 600 clamp(2.1rem, 6vw, 3.1rem)/1.08 var(--font-display); text-wrap: balance; }
+.lede { margin: 0; max-width: 60ch; color: var(--muted); font-size: 1.0625rem; }
+
+/* Example banner */
+.example {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1rem;
+  border: 1px solid var(--gold); border-radius: 8px; padding: .75rem 1rem; background: var(--surface);
+}
+.example p { margin: 0; flex: 1 1 18rem; min-width: 0; font-size: .9375rem; }
+.btn {
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px;
+  padding: .45rem .85rem; cursor: pointer; font-size: .9rem;
+}
+.btn:hover { border-color: var(--gold); }
+.btn.primary { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-weight: 600; }
+
+/* Summary */
+.summary { display: grid; gap: 1.5rem; }
+.score-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.5rem; }
+.score { font: 600 clamp(3.5rem, 12vw, 5.5rem)/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.score small { font-size: .4em; color: var(--muted); margin-left: .1em; }
+.band-text { flex: 1 1 16rem; min-width: 0; }
+.band { margin: 0; font: 600 1.375rem/1.2 var(--font-display); }
+.band-note { margin: .25rem 0 0; color: var(--muted); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; margin: 0; }
+.stats div { border-top: 1px solid var(--line); padding-top: .5rem; min-width: 0; }
+.stats dt { color: var(--muted); font-size: .875rem; }
+.stats dd { margin: 0; font: 600 1.375rem var(--font-display); font-variant-numeric: tabular-nums; }
+
+h2 { margin: 0; font: 600 1.375rem/1.2 var(--font-display); }
+.sec-note { margin: .25rem 0 0; color: var(--muted); font-size: .9375rem; }
+.tools { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+.group { display: grid; gap: 1rem; }
+.status { color: var(--muted); font-size: .875rem; }
+textarea#fallback { width: 100%; min-height: 8rem; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: .6rem; font: .8125rem/1.5 var(--font-mono); }
+.foot { color: var(--muted); font-size: .875rem; border-top: 1px solid var(--line); padding-top: 1rem; max-width: 64ch; }
+
+/* Checks */
+.checks { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; }
+.checks li { display: flex; justify-content: space-between; gap: 1rem; padding: .5rem 0; border-top: 1px solid var(--line); }
+.checks .n { font: 600 1rem var(--font-display); font-variant-numeric: tabular-nums; }
+.checks .n.bad { color: var(--brick); }
+.checks .n.ok { color: var(--good); }
+
+/* Toolbar */
+.toolbar { display: grid; gap: .6rem; }
+.toolbar .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.toolbar input[type=search], .toolbar select, .f input[type=text], .f textarea, .f select {
+  font: inherit; font-size: .9375rem; color: var(--fg); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 6px; padding: .45rem .55rem; min-width: 0;
+}
+.toolbar input[type=search] { flex: 1 1 14rem; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Themes and controls */
+.theme { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.theme > summary { list-style: none; cursor: pointer; padding: 1rem; display: grid; grid-template-columns: 1fr auto; gap: .15rem 1rem; align-items: center; }
+.theme > summary::-webkit-details-marker { display: none; }
+.theme > summary .t { font: 600 1.125rem var(--font-display); }
+.theme > summary .m { grid-column: 1; color: var(--muted); font-size: .875rem; }
+.theme > summary .s { grid-column: 2; grid-row: 1 / span 2; color: var(--muted); display: flex; gap: .6rem; align-items: center; font-size: .9375rem; }
+.chev { width: .6rem; height: .6rem; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s ease; margin-bottom: .2rem; }
+.theme[open] .chev { transform: rotate(225deg); margin-bottom: -.2rem; }
+.theme > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 10px; }
+.ctls { padding: 0 1rem 1rem; }
+.ctl { padding: 1rem 0; border-top: 1px solid var(--line); display: grid; gap: .6rem; }
+.ctl-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem .6rem; }
+.ref { font: 500 .8125rem var(--font-mono); color: var(--gold); }
+.nm { font-size: 1.0625rem; }
+.flag { margin-left: auto; font-size: .75rem; color: var(--brick); border: 1px solid var(--brick); border-radius: 999px; padding: 0 .5rem; }
+.flag.done { color: var(--good); border-color: var(--good); }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .375rem; max-width: 22rem; }
+.opt { position: relative; }
+.opt input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.opt label { display: block; text-align: center; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); font-size: .875rem; cursor: pointer; }
+.opt label:hover { border-color: var(--gold); }
+.opt input:checked + label { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-weight: 600; }
+.opt input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: .375rem; }
+.chips .opt label { border-radius: 999px; padding: .25rem .7rem; }
+.f { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem .75rem; }
+.f label.fld { display: grid; gap: .2rem; font-size: .8125rem; color: var(--muted); min-width: 0; }
+.f .wide { grid-column: 1 / -1; }
+.f textarea { min-height: 3.5rem; resize: vertical; width: 100%; }
+.f input[type=text], .f select { width: 100%; }
+.legend { margin: 0; font-size: .8125rem; color: var(--muted); }
+.miss { margin: 0; font-size: .8125rem; color: var(--brick); }
+.empty { color: var(--muted); }
+@media (max-width: 520px) { .f { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .meter-fill, .chev { transition: none; } }
+
+/* Suite navigation */
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; padding-top: 1rem; }
+.nav .lbl { font: 500 .75rem var(--font-mono); color: var(--muted); letter-spacing: .04em; margin-right: .3rem; }
+.nav a { color: var(--fg); text-decoration: none; border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: .25rem .8rem; font-size: .875rem; }
+.nav a:hover { border-color: var(--gold); }
+.nav a[aria-current="page"] { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-weight: 600; }
+.nav a:focus-visible, .xlink a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.xlink { margin: 0; color: var(--muted); font-size: .9375rem; }
+.xlink a { color: var(--gold); }
+
+.flag.mute { color: var(--muted); border-color: var(--line); }
+.f .third { grid-column: auto; }
+.add { display: flex; flex-wrap: wrap; gap: .5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.add input { flex: 1 1 14rem; font: inherit; font-size: .9375rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: .45rem .55rem; min-width: 0; }
+.rm { justify-self: start; }
+.f input[type=date] { width: 100%; min-width: 0; font: inherit; font-size: .9375rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: .45rem .55rem; color-scheme: inherit; }
+.f input[type=date]::-webkit-calendar-picker-indicator { opacity: .7; cursor: pointer; }
+
+.seg.four { grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 32rem; }
+@media (max-width: 520px) { .seg.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.redflags { border: 1px solid var(--brick); border-radius: 10px; padding: 1rem; display: grid; gap: .4rem; }
+.redflags h3 { margin: 0; font: 600 1.0625rem var(--font-display); color: var(--brick); }
+.redflags ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .25rem; }
+.redflags.clear { border-color: var(--good); }
+.redflags.clear h3 { color: var(--good); }
+.setup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem .75rem; }
+.setup label { display: grid; gap: .2rem; font-size: .8125rem; color: var(--muted); min-width: 0; }
+.setup input { font: inherit; font-size: .9375rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: .45rem .55rem; width: 100%; min-width: 0; }
+.setup input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (max-width: 520px) { .setup { grid-template-columns: minmax(0, 1fr); } }
+.ta { width: 100%; min-height: 12rem; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 6px; padding: .75rem; font: .8125rem/1.55 var(--font-mono); }
+
+.nav .tt { margin-left: auto; font: inherit; font-size: .875rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: .25rem .8rem; cursor: pointer; }
+.nav .tt:hover { border-color: var(--gold); }
+.nav .tt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <nav class="nav" aria-label="GRC tools"><span class="lbl">GRC TOOLS</span><a href="/">Start here</a><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor" aria-current="page">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
+<script>
+(function () {
+  var KEY = 'grc-theme', root = document.documentElement, btn = document.getElementById('themeBtn');
+  function stored() { try { var v = localStorage.getItem(KEY); return v === 'light' || v === 'dark' ? v : ''; } catch (e) { return ''; } }
+  function system() { try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'; } catch (e) { return 'dark'; } }
+  function current() { return root.getAttribute('data-theme') || system(); }
+  function label() { if (btn) { var next = current() === 'light' ? 'dark' : 'light'; btn.textContent = next === 'light' ? 'Light mode' : 'Dark mode'; btn.setAttribute('aria-label', 'Switch to ' + next + ' theme'); } }
+  var s = stored(); if (s) root.setAttribute('data-theme', s);
+  label();
+  if (btn) btn.addEventListener('click', function () {
+    var next = current() === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem(KEY, next); } catch (e) { /* ignore */ }
+    label();
+  });
+})();
+</script>
+
+
+  <div class="bar" aria-live="polite">
+    <strong id="barPct">0%</strong>
+    <span id="barBand">AI vendor check</span>
+    <span id="barAns"></span>
+  </div>
+
+  <header class="head">
+    <p class="kicker">Third-party AI risk</p>
+    <h1>AI Vendor Due Diligence Checker</h1>
+    <p class="lede">Screen an AI tool before your organisation adopts it. Answer 27 questions about data handling, security, governance, oversight, regulation and exit. You get a risk rating, any red flags, and a list of questions to send back to the vendor.</p>
+  </header>
+
+  <div class="example" id="example" role="status" hidden>
+    <p>These are example answers for a fictional vendor, with some red flags left in on purpose so you can see how they show. Change anything, or clear it to review a real vendor.</p>
+    <button type="button" class="btn primary" id="clearExample">Clear and start mine</button>
+  </div>
+
+  <section class="group" aria-labelledby="stH">
+    <h2 id="stH">About this review</h2>
+    <div class="setup">
+      <label>Vendor<input type="text" id="vendor" maxlength="80" autocomplete="off" placeholder="Name of the vendor"></label>
+      <label>Tool and intended use<input type="text" id="tool" maxlength="100" autocomplete="off" placeholder="For example, AI note taker for client calls"></label>
+    </div>
+  </section>
+
+  <section class="summary" aria-labelledby="sumH">
+    <h2 id="sumH" style="position:absolute;left:-9999px">Summary</h2>
+    <div class="score-row">
+      <div class="score"><span id="pct">0</span><small>%</small></div>
+      <div class="band-text">
+        <p class="band" id="band"></p>
+        <p class="band-note" id="bandNote"></p>
+      </div>
+    </div>
+    <div class="meter" role="img" aria-label="Vendor confidence meter"><div class="meter-fill" id="meterFill"></div></div>
+    <dl class="stats">
+      <div><dt>Answered</dt><dd id="stAns"></dd></div>
+      <div><dt>Red flags</dt><dd id="stFlag"></dd></div>
+      <div><dt>Gaps to raise</dt><dd id="stGap"></dd></div>
+      <div><dt>Unknown</dt><dd id="stUnk"></dd></div>
+    </dl>
+    <div class="redflags" id="flags"></div>
+  </section>
+
+  <section class="group" aria-labelledby="qH">
+    <div>
+      <h2 id="qH">Questions</h2>
+      <p class="sec-note">Answer from the vendor's documents, contract and security pages, not from assumptions. Choose Unknown when you cannot find the answer. It counts the same as No until the vendor confirms.</p>
+    </div>
+    <div class="toolbar">
+      <div class="row">
+        <input type="search" id="q" placeholder="Search questions" aria-label="Search questions">
+        <select id="flt" aria-label="Filter questions">
+          <option value="all">All questions</option>
+          <option value="open">Not answered</option>
+          <option value="flag">Red flags</option>
+          <option value="gap">Gaps to raise</option>
+        </select>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="expand">Expand all</button>
+        <button type="button" class="btn" id="collapse">Collapse all</button>
+      </div>
+    </div>
+    <div id="areas" class="group"></div>
+    <p class="empty" id="none" hidden>No questions match this filter.</p>
+  </section>
+
+  <section class="group" aria-labelledby="exH">
+    <div>
+      <h2 id="exH">Summary for the vendor and your team</h2>
+      <p class="sec-note">A short write-up with the rating, the red flags, the questions to send the vendor and the actions on your side.</p>
+    </div>
+    <textarea class="ta" id="summary" readonly aria-label="Review summary"></textarea>
+    <div class="tools">
+      <button type="button" class="btn primary" id="copySum">Copy summary</button>
+      <button type="button" class="btn" id="csv">Download CSV</button>
+      <span class="status" id="exStatus" role="status"></span>
+    </div>
+    <p class="xlink">Related tools: the <a href="/readiness-check">audit readiness check</a>, the <a href="/soa-builder">Statement of Applicability builder</a> and the <a href="/documents">document checklist</a>.</p>
+  </section>
+
+  <section class="group">
+    <div class="tools"><button type="button" class="btn" id="reset">Clear all answers</button></div>
+    <p class="foot">This is a screening aid. It is not an approval decision, a legal opinion or a security assessment, and a good score does not make a vendor safe. Verify answers against documents and contract terms. Which rules apply depends on your sector, your location and how you use the tool. Everything stays in this browser only.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'ai-vendor-check-v1';
+  var AREAS = [
+    { id: 'data', name: 'Data handling' },
+    { id: 'sec', name: 'Security' },
+    { id: 'gov', name: 'Transparency and governance' },
+    { id: 'ovs', name: 'Accuracy and oversight' },
+    { id: 'reg', name: 'Legal and regulatory' },
+    { id: 'exit', name: 'Resilience and exit' }
+  ];
+  /* [area, question, critical, why it matters, ask the vendor, internal-only] */
+  var Q = [
+    ['data', 'We know what data will be entered into the tool and have ruled out anything we are not allowed to share.', 0, 'This is your side of the risk. Personal, client and confidential data need a clear decision before first use.', 'Classify the data that will go into the tool and set clear rules for staff.', 1],
+    ['data', 'The vendor states where our data is stored and processed.', 1, 'Location affects transfer rules and who can compel access.', 'In which countries is our data stored and processed, including backups and support access?'],
+    ['data', 'The vendor provides a data processing agreement.', 1, 'You usually need one where the vendor handles personal data for you.', 'Please provide your data processing agreement.'],
+    ['data', 'The vendor does not use our inputs or outputs to train or improve its models without our agreement.', 1, 'A common surprise. Check the default setting and the contract, not only the marketing page.', 'Do you use our inputs or outputs to train or improve any models, and is this off by default and stated in the contract?'],
+    ['data', 'The vendor states how long inputs and outputs are kept.', 0, 'Short, stated retention limits reduce exposure after an incident.', 'How long are our inputs, outputs and logs retained, and can we set the period?'],
+    ['data', 'We can have our data deleted on request and at the end of the contract.', 1, 'Without this, your data stays with the vendor after you leave.', 'How do we request deletion, how long does it take, and do you confirm it in writing?'],
+    ['data', 'The vendor lists its subprocessors and tells us when they change.', 0, 'Your data may pass through several companies, including the underlying model provider.', 'Please share your subprocessor list and explain how you notify us of changes.'],
+    ['sec', 'An independent certification such as ISO 27001 or SOC 2 covers the service we will use.', 1, 'Check that the scope covers this product, not only the company as a whole.', 'Please share your current ISO 27001 certificate or SOC 2 report and its scope.'],
+    ['sec', 'Data is encrypted in transit and at rest.', 0, 'This is a baseline expectation.', 'Please describe encryption in transit and at rest, and who manages the keys.'],
+    ['sec', 'The service supports single sign-on, multi-factor authentication and role-based access.', 0, 'Weak access control is a common route to misuse of AI tools.', 'Do you support SSO, MFA and role-based access, and which plans include them?'],
+    ['sec', 'The vendor runs regular penetration tests and will share a summary.', 0, 'Independent testing shows the vendor looks for its own weaknesses.', 'How often do you run penetration tests, and can you share a summary of results?'],
+    ['sec', 'The vendor commits to telling us about a breach within a stated time.', 1, 'Your own reporting duties may run from when you become aware.', 'What is your contractual timeframe for notifying us of a security incident?'],
+    ['sec', 'The vendor describes how it tests for AI-specific attacks such as prompt injection and data leakage.', 0, 'AI tools add attack routes that standard security reviews can miss.', 'How do you test for and reduce prompt injection, data leakage and misuse of the model?'],
+    ['gov', 'The vendor explains what the system is for, how it works and its known limitations.', 0, 'Without this you cannot judge whether the tool suits your use.', 'Can you provide a system description or model card, including intended use and known limitations?'],
+    ['gov', 'The vendor discloses which underlying models and third-party AI providers it uses.', 0, 'Your risk includes whoever supplies the model behind the product.', 'Which underlying models and third-party AI providers does the service rely on?'],
+    ['gov', 'The vendor tells us before models or features change in ways that affect results.', 0, 'Silent model changes can alter accuracy and behaviour after you have approved the tool.', 'How do you notify customers of material model or feature changes?'],
+    ['gov', 'The vendor follows a recognised AI governance approach, such as ISO/IEC 42001 or the NIST AI Risk Management Framework.', 0, 'Not essential yet, but it shows the vendor manages AI risk deliberately.', 'Do you align with, or hold certification to, a recognised AI governance framework?'],
+    ['ovs', 'The vendor explains how outputs are tested for accuracy and bias.', 0, 'Claims of accuracy need evidence, particularly where outputs affect people.', 'How do you test for accuracy, bias and harmful outputs, and can you share results?'],
+    ['ovs', 'Our staff can review and override outputs before they affect a decision.', 0, 'This matters most where outputs affect people, such as hiring, credit or access to services.', 'Does the tool allow human review and override of outputs before action is taken?'],
+    ['ovs', 'Errors and harmful outputs can be reported, and the vendor tracks and responds to them.', 0, 'A working feedback route shows the vendor takes output problems seriously.', 'How do we report incorrect or harmful outputs, and how are they handled?'],
+    ['reg', 'The vendor states how the tool is classified under relevant AI regulation, such as the EU AI Act, and what that means for us.', 0, 'Rules apply by use and by location, so confirm what applies to you.', 'How do you classify this system under relevant AI regulation, and which obligations fall to you and to us?'],
+    ['reg', 'The vendor supports our UK GDPR duties, such as access and deletion requests.', 0, 'You remain responsible for personal data even when a vendor processes it.', 'How do you help us respond to data subject requests and meet our UK GDPR obligations?'],
+    ['reg', 'The contract says who owns inputs and outputs and covers claims that outputs infringe someone\'s rights.', 1, 'Check ownership and any indemnity in the terms, not only the sales page.', 'Who owns inputs and outputs under the contract, and do you offer an intellectual property indemnity?'],
+    ['exit', 'The vendor states service levels for availability and support.', 0, 'If the tool becomes part of a process, outages become your problem.', 'What are your availability and support commitments?'],
+    ['exit', 'The vendor has business continuity and incident response plans it can describe.', 0, 'You need to know what happens when the service fails.', 'Can you summarise your business continuity and incident response arrangements?'],
+    ['exit', 'We can export our data in a usable format when we leave.', 0, 'Avoids being locked in.', 'In what format and how quickly can we export our data when we leave?'],
+    ['exit', 'The contract gives us a way to get assurance, such as audit rights or regular reports.', 0, 'You cannot rely on promises you have no way to check.', 'What audit rights or assurance reports do you provide to customers?']
+  ];
+  var ITEMS = Q.map(function (r, i) {
+    return { id: 'q' + i, ar: r[0], q: r[1], crit: !!r[2], why: r[3], ask: r[4], us: !!r[5] };
+  });
+  if (ITEMS.length !== 27) { throw new Error('Expected 27 questions'); }
+  var OPT = [['y', 'Yes'], ['p', 'Partly'], ['n', 'No'], ['u', 'Unknown']];
+  var LABEL = { y: 'Yes', p: 'Partly', n: 'No', u: 'Unknown' };
+  var SCORE = { y: 1, p: 0.5, n: 0, u: 0 };
+
+  var state = { v: '', t: '', a: {}, ex: false };
+  function rec(id) { return state.a[id] || (state.a[id] = { r: '', n: '' }); }
+
+  function sampleState() {
+    var codes = ['y','y','y','u','p','y','p', 'p','y','y','n','n','u', 'p','u','y','n', 'p','y','p', 'y','y','n', 'y','p','y','n'];
+    var notes = { 3: 'Trains on free-tier inputs by default. Enterprise terms not seen.', 7: 'SOC 2 Type 1 only, scope unclear.', 11: 'Terms say "without undue delay". No hours stated.' };
+    var a = {};
+    ITEMS.forEach(function (it, i) { a[it.id] = { r: codes[i], n: notes[i] || '' }; });
+    return { v: 'Example AI Co (fictional)', t: 'AI meeting assistant for client calls', a: a, ex: true };
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var p = JSON.parse(raw);
+        if (p && typeof p.a === 'object') return { v: p.v || '', t: p.t || '', a: p.a, ex: !!p.ex };
+      }
+    } catch (e) { /* storage unavailable */ }
+    return sampleState();
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ } }
+  function el(id) { return document.getElementById(id); }
+  function code(it) { var r = state.a[it.id]; return r && LABEL[r.r] ? r.r : ''; }
+  function isFlag(it) { var c = code(it); return it.crit && (c === 'n' || c === 'u'); }
+  function isGap(it) { var c = code(it); return c === 'n' || c === 'u' || c === 'p'; }
+
+  function build() {
+    var host = el('areas');
+    AREAS.forEach(function (ar, ai) {
+      var d = document.createElement('details');
+      d.className = 'theme'; d.id = 'ar-' + ar.id; if (ai === 0) d.open = true;
+      var html = '<summary><span class="t">' + ar.name + '</span><span class="m" id="m-' + ar.id + '"></span>' +
+        '<span class="s"><span id="s-' + ar.id + '"></span><span class="chev" aria-hidden="true"></span></span></summary><div class="ctls">';
+      ITEMS.filter(function (it) { return it.ar === ar.id; }).forEach(function (it) {
+        var id = it.id;
+        html += '<div class="ctl" id="' + id + '">' +
+          '<div class="ctl-top"><span class="nm" id="nm-' + id + '"></span>' + (it.crit ? '<span class="flag mute">Critical</span>' : '') + '</div>' +
+          '<p class="legend">' + it.why + '</p>' +
+          '<div class="seg four" role="radiogroup" aria-labelledby="nm-' + id + '">';
+        OPT.forEach(function (o) {
+          html += '<span class="opt"><input type="radio" name="r-' + id + '" id="' + o[0] + '-' + id + '" value="' + o[0] + '"><label for="' + o[0] + '-' + id + '">' + o[1] + '</label></span>';
+        });
+        html += '</div><div class="f"><label class="fld wide">Vendor\'s answer or evidence<input type="text" id="nt-' + id + '" data-id="' + id + '" maxlength="200" autocomplete="off" placeholder="Where you found it, or what they said"></label></div>' +
+          '<p class="miss" id="ms-' + id + '"></p></div>';
+      });
+      html += '</div>';
+      d.innerHTML = html;
+      host.appendChild(d);
+    });
+    ITEMS.forEach(function (it) { el('nm-' + it.id).textContent = it.q; });
+  }
+  function setVal(n, v) { if (document.activeElement !== n && n.value !== v) n.value = v; }
+
+  function stats() {
+    var s = { w: 0, v: 0, ans: 0, flag: 0, gap: 0, unk: 0, per: {} };
+    AREAS.forEach(function (a) { s.per[a.id] = { n: 0, ans: 0 }; });
+    ITEMS.forEach(function (it) {
+      var c = code(it), w = it.crit ? 2 : 1;
+      s.w += w; s.per[it.ar].n++;
+      if (c) { s.ans++; s.per[it.ar].ans++; s.v += w * SCORE[c]; }
+      if (isFlag(it)) s.flag++;
+      if (isGap(it)) s.gap++;
+      if (c === 'u') s.unk++;
+    });
+    s.pct = Math.round(s.v / s.w * 100);
+    return s;
+  }
+  function rating(s) {
+    if (s.ans < ITEMS.length) return ['Review in progress', (ITEMS.length - s.ans) + ' questions still to answer. The rating appears when all are answered.'];
+    if (s.flag > 0) return ['Hold: resolve red flags', s.flag + (s.flag === 1 ? ' critical question is' : ' critical questions are') + ' answered No or Unknown. Get answers from the vendor before approving.'];
+    if (s.pct >= 80) return ['Lower risk', 'Answers look strong. Check the evidence behind the Yes answers and keep a record of the review.'];
+    if (s.pct >= 55) return ['Moderate risk', 'No red flags, but gaps remain. Raise them with the vendor and agree the answers in the contract.'];
+    return ['Higher risk', 'Many gaps remain. Consider whether this tool is suitable for the data and decisions involved.'];
+  }
+
+  function update() {
+    var s = stats(), q = el('q').value.trim().toLowerCase(), f = el('flt').value, shown = 0;
+    ITEMS.forEach(function (it) {
+      var id = it.id, c = code(it), r = state.a[id] || { r: '', n: '' };
+      OPT.forEach(function (o) { el(o[0] + '-' + id).checked = c === o[0]; });
+      setVal(el('nt-' + id), r.n || '');
+      var ms = '';
+      if (isFlag(it)) ms = 'Red flag: a critical question answered ' + LABEL[c] + '.';
+      else if (c === 'u') ms = 'Ask the vendor to confirm this.';
+      el('ms-' + id).textContent = ms;
+      var match = !q || it.q.toLowerCase().indexOf(q) > -1;
+      if (match) {
+        if (f === 'open') match = !c;
+        else if (f === 'flag') match = isFlag(it);
+        else if (f === 'gap') match = isGap(it);
+      }
+      el(id).hidden = !match; if (match) shown++;
+    });
+    AREAS.forEach(function (a) {
+      var p = s.per[a.id];
+      el('m-' + a.id).textContent = p.ans + ' of ' + p.n + ' answered';
+      var vis = ITEMS.some(function (it) { return it.ar === a.id && !el(it.id).hidden; });
+      el('ar-' + a.id).hidden = !vis;
+    });
+    el('none').hidden = shown !== 0;
+    el('pct').textContent = s.pct; el('barPct').textContent = s.pct + '%';
+    el('meterFill').style.width = s.pct + '%';
+    var rt = rating(s);
+    el('band').textContent = rt[0]; el('bandNote').textContent = rt[1]; el('barBand').textContent = rt[0];
+    el('barAns').textContent = s.ans + ' of ' + ITEMS.length + ' answered';
+    el('stAns').textContent = s.ans + ' of ' + ITEMS.length; el('stFlag').textContent = s.flag;
+    el('stGap').textContent = s.gap; el('stUnk').textContent = s.unk;
+    el('example').hidden = !state.ex;
+    setVal(el('vendor'), state.v); setVal(el('tool'), state.t);
+
+    var fl = ITEMS.filter(isFlag), box = el('flags');
+    if (fl.length) {
+      box.className = 'redflags';
+      box.innerHTML = '<h3>Red flags</h3><ul>' + fl.map(function () { return '<li></li>'; }).join('') + '</ul>';
+      var lis = box.querySelectorAll('li');
+      fl.forEach(function (it, i) { lis[i].textContent = it.q + ' (' + LABEL[code(it)] + ')'; });
+    } else {
+      box.className = 'redflags clear';
+      box.innerHTML = '<h3>No red flags</h3><p style="margin:0;color:var(--muted)">' + (s.ans < ITEMS.length ? 'Seven critical questions are marked. Red flags appear here when one is answered No or Unknown.' : 'None of the critical questions is answered No or Unknown.') + '</p>';
+    }
+    el('summary').value = summaryText(s, rt);
+  }
+
+  function summaryText(s, rt) {
+    var L = [];
+    var name = state.v.trim() || 'Vendor not named';
+    L.push('AI vendor review: ' + name + (state.t.trim() ? ' (' + state.t.trim() + ')' : ''));
+    L.push('Rating: ' + rt[0] + ' | Score: ' + s.pct + '% | Answered: ' + s.ans + ' of ' + ITEMS.length);
+    var fl = ITEMS.filter(isFlag);
+    L.push('');
+    L.push('Red flags: ' + (fl.length ? '' : 'none'));
+    fl.forEach(function (it) { L.push('- ' + it.q + ' (' + LABEL[code(it)] + ')'); });
+    var asks = ITEMS.filter(function (it) { return !it.us && (isGap(it)); }).sort(function (a, b) {
+      var ka = (a.crit ? 0 : 2) + (code(a) === 'p' ? 1 : 0), kb = (b.crit ? 0 : 2) + (code(b) === 'p' ? 1 : 0);
+      return ka - kb;
+    });
+    L.push('');
+    L.push('Questions for the vendor:');
+    if (!asks.length) L.push('- None');
+    asks.forEach(function (it, i) { L.push((i + 1) + '. ' + it.ask); });
+    var us = ITEMS.filter(function (it) { return it.us && code(it) !== 'y'; });
+    L.push('');
+    L.push('Actions on our side:');
+    if (!us.length) L.push('- None');
+    us.forEach(function (it) { L.push('- ' + it.ask); });
+    L.push('');
+    L.push('Screening aid only. Not an approval decision or legal opinion.');
+    return L.join('\n');
+  }
+
+  /* Export */
+  function safe(v) { v = String(v == null ? '' : v); return /^[=+\-@\t\r]/.test(v) ? "'" + v : v; }
+  function csvText() {
+    var rows = [['Area', 'Question', 'Critical', 'Answer', 'Vendor answer or evidence']];
+    ITEMS.forEach(function (it) {
+      var ar = AREAS.filter(function (a) { return a.id === it.ar; })[0].name, r = state.a[it.id] || {};
+      rows.push([ar, it.q, it.crit ? 'Yes' : 'No', code(it) ? LABEL[code(it)] : 'Not answered', r.n || '']);
+    });
+    return rows.map(function (row) { return row.map(function (v) { return '"' + safe(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+  }
+  function say(t) { var s = el('exStatus'); s.textContent = t; setTimeout(function () { s.textContent = ''; }, 3500); }
+  function download() {
+    try {
+      var blob = new Blob(['﻿' + csvText()], { type: 'text/csv;charset=utf-8' });
+      var url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = 'ai-vendor-review.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      say('Download started');
+    } catch (e) { say('Download is not available here. Copy the summary instead.'); }
+  }
+  function copySummary() {
+    var t = el('summary');
+    function fallback() { t.focus(); t.select(); say('Press copy on the selected text.'); }
+    try { navigator.clipboard.writeText(t.value).then(function () { say('Copied'); }, fallback); }
+    catch (e) { fallback(); }
+  }
+
+  /* Events */
+  document.addEventListener('change', function (e) {
+    var t = e.target;
+    if (t && t.type === 'radio' && t.name && t.name.indexOf('r-') === 0) {
+      rec(t.name.slice(2)).r = t.value; state.ex = false; save(); update();
+    }
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (!t) return;
+    if (t.id === 'vendor') { state.v = t.value; state.ex = false; save(); update(); }
+    else if (t.id === 'tool') { state.t = t.value; state.ex = false; save(); update(); }
+    else if (t.getAttribute && t.getAttribute('data-id')) { rec(t.getAttribute('data-id')).n = t.value; state.ex = false; save(); update(); }
+  });
+  el('q').addEventListener('input', update);
+  el('flt').addEventListener('change', update);
+  el('clearExample').addEventListener('click', function () { state = { v: '', t: '', a: {}, ex: false }; save(); update(); });
+  el('expand').addEventListener('click', function () { document.querySelectorAll('details.theme').forEach(function (d) { d.open = true; }); });
+  el('collapse').addEventListener('click', function () { document.querySelectorAll('details.theme').forEach(function (d) { d.open = false; }); });
+  el('csv').addEventListener('click', download);
+  el('copySum').addEventListener('click', copySummary);
+  (function () {
+    var btn = el('reset'), timer = null;
+    btn.addEventListener('click', function () {
+      if (btn.dataset.arm === '1') {
+        btn.dataset.arm = ''; btn.textContent = 'Clear all answers'; clearTimeout(timer);
+        state = { v: '', t: '', a: {}, ex: false }; save(); update(); window.scrollTo({ top: 0 }); return;
+      }
+      btn.dataset.arm = '1'; btn.textContent = 'Click again to clear everything';
+      timer = setTimeout(function () { btn.dataset.arm = ''; btn.textContent = 'Clear all answers'; }, 4000);
+    });
+  })();
+
+  state = load();
+  build();
+  update();
+})();
+</script>
