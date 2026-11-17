@@ -82,8 +82,8 @@ function Nav({ theme, onTheme, page }) {
     ['/ai-vendor', 'AI vendor check'],
   ];
   return (
-    <nav className="nav" aria-label="Groundwork tools">
-      <span className="lbl">GROUNDWORK</span>
+    <nav className="nav" aria-label="Cairn tools">
+      <span className="lbl">CAIRN</span>
       <a href="/" aria-current={page === 'start' ? 'page' : undefined}>
         Start here
       </a>
@@ -105,7 +105,7 @@ function Nav({ theme, onTheme, page }) {
 function Intro({ onStart, hasAnswers, onResume }) {
   return (
     <section className="intro">
-      <p className="kicker">Groundwork: a free guide for small businesses</p>
+      <p className="kicker">Cairn: a free guide for small businesses</p>
       <h1>Where do I start with security, data protection and AI?</h1>
       <p className="lede">
         UK GDPR, Cyber Essentials, ISO 27001 and AI governance sound like four separate mountains. They overlap heavily.
