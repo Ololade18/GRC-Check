@@ -33,7 +33,7 @@ export function buildISP(a, d) {
   const special = a.special === 'yes';
   const personal = a.data !== 'none';
   const usesAI = a.ai !== 'none';
-  const wantsCE = a.certs === 'none' && (has(a, 'sells', 'public') || a.asked === 'yes');
+  const wantsCE = !has(a, 'certs', 'ce') && !has(a, 'certs', 'cep') && (has(a, 'sells', 'public') || a.asked === 'yes');
 
   const sections = [
     S('Purpose', [

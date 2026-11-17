@@ -12,13 +12,22 @@ import Docs from './Docs.jsx';
 const KEY = 'start-here-v1';
 const THEME_KEY = 'grc-theme';
 
+// Older saved answers stored certs and goal as a single value. Convert them to lists.
+function migrate(a) {
+  const out = { ...a };
+  ['certs', 'goal'].forEach((k) => {
+    if (typeof out[k] === 'string') out[k] = [out[k] === 'iso' ? 'iso27001' : out[k]];
+  });
+  return out;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const s = JSON.parse(raw);
       if (s && typeof s === 'object') {
-        return { a: s.a || {}, d: s.d || {}, step: s.step || 'intro', qi: s.qi || 0 };
+        return { a: migrate(s.a || {}), d: s.d || {}, step: s.step || 'intro', qi: s.qi || 0 };
       }
     }
   } catch (e) {
@@ -73,8 +82,8 @@ function Nav({ theme, onTheme, page }) {
     ['/ai-vendor', 'AI vendor check'],
   ];
   return (
-    <nav className="nav" aria-label="GRC tools">
-      <span className="lbl">GRC TOOLS</span>
+    <nav className="nav" aria-label="Groundwork tools">
+      <span className="lbl">GROUNDWORK</span>
       <a href="/" aria-current={page === 'start' ? 'page' : undefined}>
         Start here
       </a>
@@ -96,7 +105,7 @@ function Nav({ theme, onTheme, page }) {
 function Intro({ onStart, hasAnswers, onResume }) {
   return (
     <section className="intro">
-      <p className="kicker">Free guide for small businesses</p>
+      <p className="kicker">Groundwork: a free guide for small businesses</p>
       <h1>Where do I start with security, data protection and AI?</h1>
       <p className="lede">
         UK GDPR, Cyber Essentials, ISO 27001 and AI governance sound like four separate mountains. They overlap heavily.
@@ -125,7 +134,7 @@ function Intro({ onStart, hasAnswers, onResume }) {
 function Intake({ state, setState, onDone }) {
   const q = QUESTIONS[state.qi];
   const val = state.a[q.id];
-  const answered = q.type === 'multi' ? true : Boolean(val);
+  const answered = q.type === 'multi' ? !q.required || (val || []).length > 0 : Boolean(val);
   const total = QUESTIONS.length;
   const headRef = useRef(null);
 
@@ -138,7 +147,9 @@ function Intake({ state, setState, onDone }) {
       let next;
       if (q.type === 'multi') {
         const cur = s.a[q.id] || [];
-        next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
+        if (cur.includes(v)) next = cur.filter((x) => x !== v);
+        else if (q.exclusive && v === q.exclusive) next = [v];
+        else next = [...cur.filter((x) => x !== q.exclusive), v];
       } else {
         next = v;
       }
@@ -259,6 +270,8 @@ function Plan({ state, setState, onEdit }) {
   const doneCount = plan.filter((x) => state.d[x.id]).length;
   const pct = plan.length ? Math.round((doneCount / plan.length) * 100) : 0;
   const nowList = FRAMEWORKS.filter((f) => fw[f.id].tone === 'now').map((f) => f.short);
+  const goals = (Array.isArray(a.goal) ? a.goal : []).map((g) => GOAL_LINES[g]).filter(Boolean);
+  const goalText = goals.length ? goals.map((g, i) => (i === 0 ? g : g.charAt(0).toLowerCase() + g.slice(1))).join('; ') : 'Get organised';
   const overlap = plan.filter((x) => FRAMEWORKS.filter((f) => x.fw[f.id]).length >= 2).length;
 
   const shown = filter === 'all' ? plan : plan.filter((x) => x.fw[filter]);
@@ -348,7 +361,7 @@ function Plan({ state, setState, onEdit }) {
             : 'You are in good shape. Keep it current.'}
         </h1>
         <p className="lede">
-          Your priority: <strong>{GOAL_LINES[a.goal] || 'Get organised'}</strong>. Below is what applies to you, then one
+          {goals.length > 1 ? 'Your priorities: ' : 'Your priority: '}<strong>{goalText}</strong>. Below is what applies to you, then one
           sequenced plan. {overlap} of your {plan.length} actions help with two or more frameworks at once.
         </p>
       </header>
@@ -492,7 +505,11 @@ export default function App() {
   }, [state]);
 
   const hasAnswers = Object.keys(state.a).length > 0;
-  const complete = QUESTIONS.every((q) => state.a[q.id] !== undefined && (q.type === 'multi' || state.a[q.id]));
+  const complete = QUESTIONS.every((q) => {
+    const v = state.a[q.id];
+    if (q.type === 'multi') return Array.isArray(v) && (!q.required || v.length > 0);
+    return Boolean(v);
+  });
 
   const docsView = hash === '#policies';
   const leaveDocs = () => {

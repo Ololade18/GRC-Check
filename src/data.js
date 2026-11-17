@@ -119,12 +119,16 @@ export const QUESTIONS = [
   {
     id: 'certs',
     q: 'Which certifications do you already hold?',
-    help: 'Choose the highest you hold.',
-    type: 'single',
+    help: 'Choose all that apply, or None.',
+    type: 'multi',
+    required: true,
+    exclusive: 'none',
     options: [
       { v: 'none', label: 'None' },
       { v: 'ce', label: 'Cyber Essentials' },
-      { v: 'iso', label: 'ISO 27001' },
+      { v: 'cep', label: 'Cyber Essentials Plus' },
+      { v: 'iso27001', label: 'ISO 27001' },
+      { v: 'iso42001', label: 'ISO 42001' },
     ],
   },
   {
@@ -140,8 +144,9 @@ export const QUESTIONS = [
   {
     id: 'goal',
     q: 'What is your main goal over the next 12 months?',
-    help: 'This shapes the headline of your plan.',
-    type: 'single',
+    help: 'Choose all that apply. This shapes the headline of your plan.',
+    type: 'multi',
+    required: true,
     options: [
       { v: 'clients', label: 'Win or keep bigger clients' },
       { v: 'tender', label: 'Qualify for tenders and public contracts' },
@@ -151,7 +156,7 @@ export const QUESTIONS = [
   },
 ];
 
-const has = (a, k, v) => (a[k] || []).includes(v);
+const has = (a, k, v) => (Array.isArray(a[k]) ? a[k] : []).includes(v);
 
 export function assessFrameworks(a) {
   const out = {};
@@ -175,8 +180,14 @@ export function assessFrameworks(a) {
   }
 
   // Cyber Essentials
-  if (a.certs === 'ce' || a.certs === 'iso') {
-    out.ce = { tone: 'held', label: 'Already held', why: 'Keep it current. It needs renewing every 12 months.' };
+  if (has(a, 'certs', 'ce') || has(a, 'certs', 'cep')) {
+    out.ce = {
+      tone: 'held',
+      label: 'Already held',
+      why: has(a, 'certs', 'cep')
+        ? 'Keep it current. Cyber Essentials Plus needs renewing every 12 months.'
+        : 'Keep it current. It needs renewing every 12 months, and Cyber Essentials Plus is the next level if clients ask for tested evidence.',
+    };
   } else if (has(a, 'sells', 'public') || a.asked === 'yes') {
     out.ce = {
       tone: 'now',
@@ -184,6 +195,12 @@ export function assessFrameworks(a) {
       why: has(a, 'sells', 'public')
         ? 'It is often required for public sector contracts, and it is the quickest recognised certificate to win.'
         : 'Clients are asking for security assurance, and this is the quickest recognised certificate to win.',
+    };
+  } else if (has(a, 'certs', 'iso27001')) {
+    out.ce = {
+      tone: 'later',
+      label: 'Optional',
+      why: 'ISO 27001 covers these controls, but some clients still ask for the Cyber Essentials certificate itself.',
     };
   } else if (a.data === 'customers' || a.cloud === 'yes') {
     out.ce = {
@@ -197,9 +214,9 @@ export function assessFrameworks(a) {
 
   // ISO 27001
   const sellsToBusiness = has(a, 'sells', 'business') || has(a, 'sells', 'public');
-  if (a.certs === 'iso') {
+  if (has(a, 'certs', 'iso27001')) {
     out.iso27001 = { tone: 'held', label: 'Already held', why: 'Keep surveillance audits and your Statement of Applicability up to date.' };
-  } else if ((a.asked === 'yes' && sellsToBusiness && (a.size === 's3' || a.size === 's4')) || (a.asked === 'yes' && a.certs === 'ce')) {
+  } else if ((a.asked === 'yes' && sellsToBusiness && (a.size === 's3' || a.size === 's4')) || (a.asked === 'yes' && (has(a, 'certs', 'ce') || has(a, 'certs', 'cep')))) {
     out.iso27001 = {
       tone: 'next',
       label: 'Plan next',
@@ -214,7 +231,9 @@ export function assessFrameworks(a) {
   }
 
   // ISO 42001
-  if (a.ai === 'build') {
+  if (has(a, 'certs', 'iso42001')) {
+    out.iso42001 = { tone: 'held', label: 'Already held', why: 'Keep surveillance audits and your AI management system up to date.' };
+  } else if (a.ai === 'build') {
     out.iso42001 = {
       tone: 'next',
       label: 'Worth planning',
@@ -768,7 +787,7 @@ export const ACTIONS = [
       iso27001: '',
       iso42001: '',
     },
-    when: (a) => a.certs === 'none',
+    when: (a) => !has(a, 'certs', 'ce') && !has(a, 'certs', 'cep'),
   },
   {
     id: 'review',
