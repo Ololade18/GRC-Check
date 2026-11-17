@@ -7,17 +7,17 @@
 
 
 :root {
-  --bg: #0B1626;
-  --surface: #101D32;
-  --surface-2: #172A45;
-  --line: rgba(230, 237, 245, 0.16);
-  --fg: #E6EDF5;
-  --muted: #9FB1C7;
-  --gold: #16B8A6;
-  --on-gold: #0B1626;
-  --brick: #F08A92;
-  --good: #3FCB8A;
-  --focus: #6FB0F0;
+  --bg: #121827;
+  --surface: #1A2133;
+  --surface-2: #2A2236;
+  --line: rgba(240, 226, 232, 0.16);
+  --fg: #F3ECEE;
+  --muted: #B7A9B4;
+  --gold: #E2825E; --wine: #9B2C52; --wine-ink: #E59AB1; --on-wine: #FFFFFF;
+  --on-gold: #1F0F0B;
+  --brick: #F4707D;
+  --good: #5CC59A;
+  --focus: #8DB8FF;
   --font-display: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
@@ -25,16 +25,16 @@
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #F4F7FA; --surface: #FFFFFF; --surface-2: #EAF0F6;
-    --line: rgba(16, 29, 50, 0.16); --fg: #101D32; --muted: #52647B;
-    --gold: #0B7F72; --on-gold: #FFFFFF; --brick: #C23B45; --good: #15803D; --focus: #2B6FB5;
+    --bg: #FAF6F2; --surface: #FFFFFF; --surface-2: #F3E9E7;
+    --line: rgba(74, 28, 44, 0.16); --fg: #2B1B26; --muted: #6B5560;
+    --gold: #B24A2A; --wine: #7B1E3A; --wine-ink: #7B1E3A; --on-wine: #FFFFFF; --on-gold: #FFFFFF; --brick: #C2273D; --good: #2F7D55; --focus: #2B5FAE;
     color-scheme: light;
   }
 }
 :root[data-theme="light"] {
-  --bg: #F4F7FA; --surface: #FFFFFF; --surface-2: #EAF0F6;
-  --line: rgba(16, 29, 50, 0.16); --fg: #101D32; --muted: #52647B;
-  --gold: #0B7F72; --on-gold: #FFFFFF; --brick: #C23B45; --good: #15803D; --focus: #2B6FB5;
+  --bg: #FAF6F2; --surface: #FFFFFF; --surface-2: #F3E9E7;
+  --line: rgba(74, 28, 44, 0.16); --fg: #2B1B26; --muted: #6B5560;
+  --gold: #B24A2A; --wine: #7B1E3A; --wine-ink: #7B1E3A; --on-wine: #FFFFFF; --on-gold: #FFFFFF; --brick: #C2273D; --good: #2F7D55; --focus: #2B5FAE;
   color-scheme: light;
 }
 
@@ -197,10 +197,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 .nav .tt { margin-left: auto; font: inherit; font-size: .875rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: .25rem .8rem; cursor: pointer; }
 .nav .tt:hover { border-color: var(--gold); }
 .nav .tt:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.kicker { color: var(--wine-ink); }
+.nav a[aria-current="page"] { background: var(--wine); border-color: var(--wine); color: var(--on-wine); }
 </style>
 
 <div class="wrap">
-  <nav class="nav" aria-label="Cairn tools"><span class="lbl">CAIRN</span><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor" aria-current="page">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
+  <nav class="nav" aria-label="Ilana tools"><span class="lbl">ILANA</span><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor" aria-current="page">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
 <script>
 (function () {
   var KEY = 'grc-theme', root = document.documentElement, btn = document.getElementById('themeBtn');

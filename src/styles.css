@@ -1,57 +1,66 @@
 :root {
-  --bg: #0b1626;
-  --surface: #101d32;
-  --surface-2: #172a45;
-  --fg: #e6edf5;
-  --muted: #9fb1c7;
-  --line: #25405f;
-  --gold: #16b8a6;
-  --on-gold: #0b1626;
-  --brick: #f08a92;
-  --good: #3fcb8a;
-  --focus: #6fb0f0;
-  --t-ukgdpr: #6fb0f0;
-  --t-ce: #16b8a6;
-  --t-iso27001: #e6a23c;
-  --t-iso42001: #b79cf2;
+  --bg: #121827;
+  --surface: #1a2133;
+  --surface-2: #2a2236;
+  --fg: #f3ecee;
+  --muted: #b7a9b4;
+  --line: #3a3046;
+  --gold: #e2825e;
+  --wine: #9B2C52;
+  --wine-ink: #E59AB1;
+  --on-wine: #FFFFFF;
+  --on-gold: #1f0f0b;
+  --brick: #f4707d;
+  --good: #5cc59a;
+  --focus: #8db8ff;
+  --t-ukgdpr: #8db8ff;
+  --t-ce: #e2825e;
+  --t-iso27001: #e0b34c;
+  --t-iso42001: #e59ab1;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme='dark']) {
-    --bg: #f4f7fa;
+    --bg: #faf6f2;
     --surface: #ffffff;
-    --surface-2: #eaf0f6;
-    --fg: #101d32;
-    --muted: #52647b;
-    --line: #d3dde8;
-    --gold: #0b7f72;
+    --surface-2: #f3e9e7;
+    --fg: #2b1b26;
+    --muted: #6b5560;
+    --line: #e3d3d2;
+    --gold: #b24a2a;
+  --wine: #7B1E3A;
+  --wine-ink: #7B1E3A;
+  --on-wine: #FFFFFF;
     --on-gold: #ffffff;
-    --brick: #c23b45;
-    --good: #15803d;
-    --focus: #2b6fb5;
-    --t-ukgdpr: #2b6fb5;
-    --t-ce: #0b7f72;
-    --t-iso27001: #a15c07;
-    --t-iso42001: #6b46c1;
+    --brick: #c2273d;
+    --good: #2f7d55;
+    --focus: #2b5fae;
+    --t-ukgdpr: #2b5fae;
+    --t-ce: #b24a2a;
+    --t-iso27001: #8a6508;
+    --t-iso42001: #7b1e3a;
     color-scheme: light;
   }
 }
 :root[data-theme='light'] {
-  --bg: #f4f7fa;
+  --bg: #faf6f2;
   --surface: #ffffff;
-  --surface-2: #eaf0f6;
-  --fg: #101d32;
-  --muted: #52647b;
-  --line: #d3dde8;
-  --gold: #0b7f72;
+  --surface-2: #f3e9e7;
+  --fg: #2b1b26;
+  --muted: #6b5560;
+  --line: #e3d3d2;
+  --gold: #b24a2a;
+  --wine: #7B1E3A;
+  --wine-ink: #7B1E3A;
+  --on-wine: #FFFFFF;
   --on-gold: #ffffff;
-  --brick: #c23b45;
-  --good: #15803d;
-  --focus: #2b6fb5;
-  --t-ukgdpr: #2b6fb5;
-  --t-ce: #0b7f72;
-  --t-iso27001: #a15c07;
-  --t-iso42001: #6b46c1;
+  --brick: #c2273d;
+  --good: #2f7d55;
+  --focus: #2b5fae;
+  --t-ukgdpr: #2b5fae;
+  --t-ce: #b24a2a;
+  --t-iso27001: #8a6508;
+  --t-iso42001: #7b1e3a;
   color-scheme: light;
 }
 
@@ -144,9 +153,9 @@ main {
   border-color: var(--gold);
 }
 .nav a[aria-current='page'] {
-  background: var(--gold);
-  color: var(--on-gold);
-  border-color: var(--gold);
+  background: var(--wine);
+  color: var(--on-wine);
+  border-color: var(--wine);
   font-weight: 600;
 }
 .nav .tt {
@@ -169,7 +178,7 @@ main {
   font-size: 0.78rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--wine-ink);
   margin-bottom: 0.6rem;
 }
 .lede {
@@ -699,4 +708,15 @@ mark.ph {
   color: inherit;
   border-radius: 0.25rem;
   padding: 0 0.15rem;
+}
+
+.intro h1 {
+  font-size: clamp(2.1rem, 7vw, 3.4rem);
+}
+.intro .sub {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--wine-ink);
+  margin-top: 0.6rem;
 }
