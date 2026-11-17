@@ -1,6 +1,6 @@
 # ÌLÀNÀ
 
-ÌLÀNÀ (Yoruba for path or guidance) is a free, browser-only guide that turns 13 plain-English questions into a 90-day plan covering UK GDPR, Cyber Essentials, ISO 27001 and ISO 42001. Includes a starter document generator (information security policy, AI use policy, incident and breach plan) at /#policies, plus the Audit Readiness Check, SoA Builder, Document Checklist and AI Vendor Checker.
+ÌLÀNÀ (Yoruba for path or guidance) is a free, browser-only guide that turns 14 plain-English questions into a 90-day plan covering UK GDPR, Cyber Essentials, ISO 27001 and ISO 42001. Includes a starter document generator (information security policy, AI use policy, incident and breach plan) at /#policies, plus the Audit Readiness Check, SoA Builder, Document Checklist and AI Vendor Checker.
 
 No backend. Answers and progress stay in the visitor's browser.
 

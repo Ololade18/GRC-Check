@@ -6,6 +6,7 @@ import {
   GOAL_LINES,
   assessFrameworks,
   buildPlan,
+  isLarge,
 } from './data.js';
 import Docs from './Docs.jsx';
 
@@ -121,7 +122,7 @@ function Intro({ onStart, hasAnswers, onResume }) {
       <p className="sub">Where do I start with security, data protection and AI?</p>
       <p className="lede">
         UK GDPR, Cyber Essentials, ISO 27001 and AI governance sound like four separate mountains. They overlap heavily.
-        Answer 13 plain questions and get one 90-day plan that shows which of them you need, and which actions cover
+        Answer 14 plain questions and get one 90-day plan that shows which of them you need, and which actions cover
         several at once.
       </p>
       <ul className="points">
@@ -239,7 +240,7 @@ function FwTag({ id }) {
   return <span className={'tag t-' + id}>{f.short}</span>;
 }
 
-function ActionItem({ item, done, onToggle }) {
+function ActionItem({ item, done, onToggle, existing }) {
   const mapped = FRAMEWORKS.filter((f) => item.fw[f.id]);
   return (
     <li className={'act' + (done ? ' done' : '')}>
@@ -257,6 +258,7 @@ function ActionItem({ item, done, onToggle }) {
             <span className="meta">
               <span className="chip">{item.effort}</span>
               <span className="chip">{item.owner}</span>
+              {existing && <span className="chip have">You have this: review it</span>}
               {mapped.map((f) => (
                 <FwTag key={f.id} id={f.id} />
               ))}
@@ -303,7 +305,13 @@ function Plan({ state, setState, onEdit }) {
   const goalText = goals.length ? goals.map((g, i) => (i === 0 ? g : g.charAt(0).toLowerCase() + g.slice(1))).join('; ') : 'Get organised';
   const overlap = plan.filter((x) => FRAMEWORKS.filter((f) => x.fw[f.id]).length >= 2).length;
 
+  const large = isLarge(a);
+  const have = Array.isArray(a.policies) ? a.policies : [];
+  const covered = (x) => Array.isArray(x.covers) && x.covers.some((c) => have.includes(c));
+  const isVerify = (x) => large && (x.basic || covered(x));
   const shown = filter === 'all' ? plan : plan.filter((x) => x.fw[filter]);
+  const verifyItems = shown.filter(isVerify);
+  const buildItems = shown.filter((x) => !isVerify(x));
 
   const toggle = (id) => setState((s) => ({ ...s, d: { ...s.d, [id]: !s.d[id] } }));
 
@@ -395,6 +403,33 @@ function Plan({ state, setState, onEdit }) {
         </p>
       </header>
 
+      {large && (
+        <section className="largebox" aria-labelledby="lg-h">
+          <h2 id="lg-h">At your size, treat this as a gap check</h2>
+          <p>
+            An organisation with more than 500 people usually has policies and a compliance function already. The basics below are grouped as things to verify, and the plan focuses on what is likely to be missing or thin. For a deeper check, start with these tools:
+          </p>
+          <div className="tools">
+            <a href="/readiness-check">
+              <strong>Readiness check</strong>
+              <span>Test your programme against 47 ISO 27001 requirements.</span>
+            </a>
+            <a href="/soa-builder">
+              <strong>SoA builder</strong>
+              <span>Check applicability and justification across all 93 controls.</span>
+            </a>
+            <a href="/documents">
+              <strong>Document checklist</strong>
+              <span>See which documents are current, drafted or overdue.</span>
+            </a>
+            <a href="/ai-vendor">
+              <strong>AI vendor check</strong>
+              <span>Assess an AI supplier before you rely on it.</span>
+            </a>
+          </div>
+        </section>
+      )}
+
       <section aria-labelledby="fw-h">
         <h2 id="fw-h">What applies to you</h2>
         <div className="fws">
@@ -439,7 +474,7 @@ function Plan({ state, setState, onEdit }) {
         </div>
 
         {PHASES.map((p) => {
-          const items = shown.filter((x) => x.phase === p.id);
+          const items = buildItems.filter((x) => x.phase === p.id);
           if (!items.length) return null;
           return (
             <div key={p.id} className="phase">
@@ -448,12 +483,26 @@ function Plan({ state, setState, onEdit }) {
               </h3>
               <ul className="acts">
                 {items.map((x) => (
-                  <ActionItem key={x.id} item={x} done={Boolean(state.d[x.id])} onToggle={() => toggle(x.id)} />
+                  <ActionItem key={x.id} item={x} done={Boolean(state.d[x.id])} onToggle={() => toggle(x.id)} existing={covered(x)} />
                 ))}
               </ul>
             </div>
           );
         })}
+
+        {verifyItems.length > 0 && (
+          <details className="verify" open={filter !== 'all' ? true : undefined}>
+            <summary>
+              <strong>Verify what you likely have in place</strong>
+              <span className="sub"> {verifyItems.length} actions. Check they are evidenced and reviewed, not rebuilt.</span>
+            </summary>
+            <ul className="acts">
+              {verifyItems.map((x) => (
+                <ActionItem key={x.id} item={x} done={Boolean(state.d[x.id])} onToggle={() => toggle(x.id)} existing={covered(x)} />
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
 
       <section aria-labelledby="gen-h" className="gen">
@@ -536,7 +585,7 @@ export default function App() {
   const hasAnswers = Object.keys(state.a).length > 0;
   const complete = QUESTIONS.every((q) => {
     const v = state.a[q.id];
-    if (q.type === 'multi') return Array.isArray(v) && (!q.required || v.length > 0);
+    if (q.type === 'multi') return q.required ? Array.isArray(v) && v.length > 0 : true;
     return Boolean(v);
   });
 

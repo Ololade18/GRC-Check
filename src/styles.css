@@ -776,3 +776,34 @@ mark.ph {
   border-radius: 0.6rem;
   padding: 0.8rem 1rem;
 }
+
+.chip.have {
+  color: var(--good);
+  border-color: var(--good);
+}
+.largebox {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--wine);
+  border-radius: 0.6rem;
+  padding: 1.1rem 1.25rem;
+}
+.largebox p {
+  margin: 0.5rem 0 0;
+  max-width: 44rem;
+  color: var(--muted);
+}
+.verify {
+  margin-top: 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.9rem 1rem;
+}
+.verify > summary {
+  cursor: pointer;
+}
+.verify .sub {
+  color: var(--muted);
+  font-size: 0.9rem;
+}

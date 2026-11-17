@@ -12,13 +12,15 @@ export const QUESTIONS = [
   {
     id: 'size',
     q: 'How many people work in your business?',
-    help: 'Include staff, directors and regular contractors.',
+    help: 'Include staff, directors and regular contractors. Larger organisations get a plan that checks existing controls instead of building from scratch.',
     type: 'single',
     options: [
       { v: 's1', label: '1 to 5' },
       { v: 's2', label: '6 to 25' },
       { v: 's3', label: '26 to 100' },
-      { v: 's4', label: 'More than 100' },
+      { v: 's4', label: '101 to 500' },
+      { v: 's5', label: '501 to 2,000' },
+      { v: 's6', label: 'More than 2,000' },
     ],
   },
   {
@@ -117,6 +119,22 @@ export const QUESTIONS = [
     ],
   },
   {
+    id: 'policies',
+    q: 'Which policies do you already have in place?',
+    help: 'Choose all that apply, or None. Those policies are marked in your plan for review instead of being treated as missing.',
+    type: 'multi',
+    exclusive: 'none',
+    options: [
+      { v: 'none', label: 'None of these' },
+      { v: 'infosec', label: 'Information security policy for staff' },
+      { v: 'acceptable', label: 'Acceptable use or corporate IT policy' },
+      { v: 'privacy', label: 'Data protection and privacy policy' },
+      { v: 'vendor', label: 'Third-party or vendor policy' },
+      { v: 'incident', label: 'Incident and breach response plan' },
+      { v: 'ai', label: 'AI use policy' },
+    ],
+  },
+  {
     id: 'certs',
     q: 'Which certifications do you already hold?',
     help: 'Choose all that apply, or None.',
@@ -158,6 +176,9 @@ export const QUESTIONS = [
 
 const has = (a, k, v) => (Array.isArray(a[k]) ? a[k] : []).includes(v);
 
+export const isLarge = (a) => a.size === 's5' || a.size === 's6';
+const midOrAbove = (a) => ['s3', 's4', 's5', 's6'].includes(a.size);
+
 export function assessFrameworks(a) {
   const out = {};
 
@@ -168,8 +189,8 @@ export function assessFrameworks(a) {
       label: 'Required by law',
       why:
         a.data === 'customers'
-          ? 'You hold customer or client personal data, so UK GDPR applies to you.'
-          : 'You hold staff personal data, so UK GDPR applies to you.',
+          ? 'You hold customer or client personal data, so UK GDPR applies to you.' + (isLarge(a) ? ' At your scale, check whether you must appoint a Data Protection Officer (Art. 37) and keep full records of processing.' : '')
+          : 'You hold staff personal data, so UK GDPR applies to you.' + (isLarge(a) ? ' At your scale, check whether you must appoint a Data Protection Officer (Art. 37).' : ''),
     };
   } else {
     out.ukgdpr = {
@@ -196,6 +217,12 @@ export function assessFrameworks(a) {
         ? 'It is often required for public sector contracts, and it is the quickest recognised certificate to win.'
         : 'Clients are asking for security assurance, and this is the quickest recognised certificate to win.',
     };
+  } else if (isLarge(a) && !has(a, 'certs', 'iso27001')) {
+    out.ce = {
+      tone: 'later',
+      label: 'Optional',
+      why: 'At your size, ISO 27001 is the more usual route. Cyber Essentials is still worth holding if public sector or smaller customers ask for it.',
+    };
   } else if (has(a, 'certs', 'iso27001')) {
     out.ce = {
       tone: 'later',
@@ -216,7 +243,13 @@ export function assessFrameworks(a) {
   const sellsToBusiness = has(a, 'sells', 'business') || has(a, 'sells', 'public');
   if (has(a, 'certs', 'iso27001')) {
     out.iso27001 = { tone: 'held', label: 'Already held', why: 'Keep surveillance audits and your Statement of Applicability up to date.' };
-  } else if ((a.asked === 'yes' && sellsToBusiness && (a.size === 's3' || a.size === 's4')) || (a.asked === 'yes' && (has(a, 'certs', 'ce') || has(a, 'certs', 'cep')))) {
+  } else if (isLarge(a)) {
+    out.iso27001 = {
+      tone: 'next',
+      label: 'Plan next',
+      why: 'Larger customers and regulators often expect it at your size. If you already run an information security programme, use the readiness check and the SoA builder to test it against the standard.',
+    };
+  } else if ((a.asked === 'yes' && sellsToBusiness && midOrAbove(a)) || (a.asked === 'yes' && (has(a, 'certs', 'ce') || has(a, 'certs', 'cep')))) {
     out.iso27001 = {
       tone: 'next',
       label: 'Plan next',
@@ -240,6 +273,12 @@ export function assessFrameworks(a) {
       why:
         'You build or sell AI, so clients may start asking how you govern it.' +
         (a.region === 'ukeu' ? ' You operate in the EU, so check whether the EU AI Act applies to what you sell.' : ''),
+    };
+  } else if (a.ai === 'use' && isLarge(a)) {
+    out.iso42001 = {
+      tone: 'next',
+      label: 'Worth planning',
+      why: 'With AI used across a large workforce, a formal AI management system, a tool register and supplier checks become worthwhile.',
     };
   } else if (a.ai === 'use') {
     out.iso42001 = {
@@ -266,6 +305,7 @@ const always = () => true;
 export const ACTIONS = [
   {
     id: 'owner',
+    basic: true,
     title: 'Name one person responsible for security and data protection',
     phase: 30,
     effort: 'Small',
@@ -287,6 +327,8 @@ export const ACTIONS = [
   },
   {
     id: 'policy',
+    basic: true,
+    covers: ['infosec', 'acceptable'],
     title: 'Write a short information security policy',
     phase: 30,
     effort: 'Small',
@@ -308,6 +350,7 @@ export const ACTIONS = [
   },
   {
     id: 'assets',
+    basic: true,
     title: 'List your devices, systems and where your data lives',
     phase: 30,
     effort: 'Medium',
@@ -329,6 +372,7 @@ export const ACTIONS = [
   },
   {
     id: 'mfa',
+    basic: true,
     title: 'Turn on multi-factor authentication for email and cloud services',
     phase: 30,
     effort: 'Small',
@@ -350,6 +394,7 @@ export const ACTIONS = [
   },
   {
     id: 'admin',
+    basic: true,
     title: 'Limit admin rights and use separate admin accounts',
     phase: 30,
     effort: 'Small',
@@ -371,6 +416,7 @@ export const ACTIONS = [
   },
   {
     id: 'updates',
+    basic: true,
     title: 'Switch on automatic updates and patch quickly',
     phase: 30,
     effort: 'Small',
@@ -392,6 +438,7 @@ export const ACTIONS = [
   },
   {
     id: 'malware',
+    basic: true,
     title: 'Make sure every device has malware protection',
     phase: 30,
     effort: 'Small',
@@ -413,6 +460,7 @@ export const ACTIONS = [
   },
   {
     id: 'firewall',
+    basic: true,
     title: 'Check your firewall and change default router passwords',
     phase: 30,
     effort: 'Small',
@@ -455,6 +503,7 @@ export const ACTIONS = [
   },
   {
     id: 'aipolicy',
+    covers: ['ai'],
     title: 'Agree an AI use policy for staff',
     phase: 30,
     effort: 'Small',
@@ -476,6 +525,7 @@ export const ACTIONS = [
   },
   {
     id: 'secureconfig',
+    basic: true,
     title: 'Remove what you do not need and change default settings',
     phase: 60,
     effort: 'Medium',
@@ -497,6 +547,7 @@ export const ACTIONS = [
   },
   {
     id: 'jml',
+    basic: true,
     title: 'Set up a process for people joining, moving and leaving',
     phase: 60,
     effort: 'Small',
@@ -518,6 +569,7 @@ export const ACTIONS = [
   },
   {
     id: 'byod',
+    basic: true,
     title: 'Set rules for personal devices used for work',
     phase: 60,
     effort: 'Small',
@@ -539,6 +591,7 @@ export const ACTIONS = [
   },
   {
     id: 'backups',
+    basic: true,
     title: 'Set up backups and test that you can restore them',
     phase: 60,
     effort: 'Medium',
@@ -560,6 +613,7 @@ export const ACTIONS = [
   },
   {
     id: 'training',
+    basic: true,
     title: 'Run short security awareness training for all staff',
     phase: 60,
     effort: 'Small',
@@ -581,6 +635,7 @@ export const ACTIONS = [
   },
   {
     id: 'privacynotice',
+    covers: ['privacy'],
     title: 'Publish a clear privacy notice',
     phase: 60,
     effort: 'Medium',
@@ -602,6 +657,7 @@ export const ACTIONS = [
   },
   {
     id: 'rights',
+    covers: ['privacy'],
     title: 'Record your lawful basis and plan for people’s data requests',
     phase: 60,
     effort: 'Medium',
@@ -623,6 +679,7 @@ export const ACTIONS = [
   },
   {
     id: 'incident',
+    covers: ['incident'],
     title: 'Write an incident and data breach plan',
     phase: 60,
     effort: 'Medium',
@@ -644,6 +701,7 @@ export const ACTIONS = [
   },
   {
     id: 'suppliers',
+    covers: ['vendor'],
     title: 'List your suppliers and check the ones that handle your data',
     phase: 60,
     effort: 'Medium',

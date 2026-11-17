@@ -124,6 +124,15 @@ export default function Docs({ answers, complete, onBack, onIntake }) {
         </p>
       </header>
 
+      {Array.isArray(answers.policies) && answers.policies.some((p) => ['infosec', 'acceptable', 'ai', 'incident'].includes(p)) && (
+        <section className="todo" aria-label="You already have policies">
+          <h3>You already have some of these policies</h3>
+          <p>
+            Use these starters as a benchmark. Compare each section with your own policy and note anything yours does not cover, instead of replacing what you have.
+          </p>
+        </section>
+      )}
+
       <section className="detailsbox" aria-labelledby="det-h">
         <h2 id="det-h">Your details</h2>
         <div className="fgrid">
