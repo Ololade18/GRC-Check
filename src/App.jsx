@@ -82,8 +82,8 @@ function Nav({ theme, onTheme, page }) {
     ['/ai-vendor', 'AI vendor check'],
   ];
   return (
-    <nav className="nav" aria-label="Ilana tools">
-      <span className="lbl">ILANA</span>
+    <nav className="nav" aria-label="ÌLÀNÀ tools">
+      <span className="lbl">ÌLÀNÀ</span>
       <a href="/" aria-current={page === 'start' ? 'page' : undefined}>
         Start here
       </a>
@@ -105,7 +105,18 @@ function Nav({ theme, onTheme, page }) {
 function Intro({ onStart, hasAnswers, onResume }) {
   return (
     <section className="intro">
-      <p className="kicker">Ilana: Yoruba for path or guidance</p>
+      <div className="dict">
+        <p className="dict-head">
+          <span className="word">ÌLÀNÀ</span> <span className="pron">/ee-LAH-nah/</span> <span className="pos">noun, Yoruba</span>
+        </p>
+        <ol className="dict-defs">
+          <li>A path; a way forward.</li>
+          <li>Guidance; direction.</li>
+        </ol>
+        <p className="dict-use">
+          <em>In use:</em> &ldquo;Her business found its ÌLÀNÀ: one plan, four frameworks.&rdquo;
+        </p>
+      </div>
       <h1>Do it once, cover many.</h1>
       <p className="sub">Where do I start with security, data protection and AI?</p>
       <p className="lede">
@@ -128,6 +139,23 @@ function Intro({ onStart, hasAnswers, onResume }) {
           </button>
         )}
       </div>
+      <section className="aims" aria-labelledby="aims-h">
+        <h2 id="aims-h">What ÌLÀNÀ aims to do</h2>
+        <ul>
+          <li>
+            <strong>Make it understandable.</strong> Plain English for people who have never read a standard.
+          </li>
+          <li>
+            <strong>Show the overlap.</strong> One plan that covers UK GDPR, Cyber Essentials, ISO 27001 and AI governance together, so work is never done twice.
+          </li>
+          <li>
+            <strong>Keep your information yours.</strong> No sign-up, and nothing you enter leaves your browser.
+          </li>
+          <li>
+            <strong>Be honest.</strong> Say what can wait, and be clear that this is guidance, not legal advice.
+          </li>
+        </ul>
+      </section>
     </section>
   );
 }
