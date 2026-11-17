@@ -7,6 +7,7 @@ import {
   assessFrameworks,
   buildPlan,
 } from './data.js';
+import Docs from './Docs.jsx';
 
 const KEY = 'start-here-v1';
 const THEME_KEY = 'grc-theme';
@@ -64,7 +65,7 @@ const safe = (v) => {
 
 const csvCell = (v) => '"' + safe(v).replace(/"/g, '""') + '"';
 
-function Nav({ theme, onTheme }) {
+function Nav({ theme, onTheme, page }) {
   const links = [
     ['/readiness-check', 'Readiness check'],
     ['/soa-builder', 'SoA builder'],
@@ -74,8 +75,11 @@ function Nav({ theme, onTheme }) {
   return (
     <nav className="nav" aria-label="GRC tools">
       <span className="lbl">GRC TOOLS</span>
-      <a href="/" aria-current="page">
+      <a href="/" aria-current={page === 'start' ? 'page' : undefined}>
         Start here
+      </a>
+      <a href="/#policies" aria-current={page === 'docs' ? 'page' : undefined}>
+        Policy generator
       </a>
       {links.map(([h, t]) => (
         <a key={h} href={h}>
@@ -410,6 +414,18 @@ function Plan({ state, setState, onEdit }) {
         })}
       </section>
 
+      <section aria-labelledby="gen-h" className="gen">
+        <h2 id="gen-h">Turn the plan into documents</h2>
+        <p className="lede">
+          Generate a starter information security policy, AI use policy and incident plan, tailored to your answers.
+        </p>
+        <div className="row">
+          <a className="btn primary linkbtn" href="/#policies">
+            Generate starter documents
+          </a>
+        </div>
+      </section>
+
       <section aria-labelledby="next-h" className="next">
         <h2 id="next-h">Go deeper with the other tools</h2>
         <div className="tools">
@@ -463,6 +479,13 @@ function Plan({ state, setState, onEdit }) {
 export default function App() {
   const [state, setState] = useState(load);
   const [theme, toggleTheme] = useTheme();
+  const [hash, setHash] = useState(() => window.location.hash);
+
+  useEffect(() => {
+    const h = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', h);
+    return () => window.removeEventListener('hashchange', h);
+  }, []);
 
   useEffect(() => {
     save(state);
@@ -471,8 +494,26 @@ export default function App() {
   const hasAnswers = Object.keys(state.a).length > 0;
   const complete = QUESTIONS.every((q) => state.a[q.id] !== undefined && (q.type === 'multi' || state.a[q.id]));
 
+  const docsView = hash === '#policies';
+  const leaveDocs = () => {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    setHash('');
+  };
+
   let view;
-  if (state.step === 'plan' && complete) {
+  if (docsView) {
+    view = (
+      <Docs
+        answers={state.a}
+        complete={complete}
+        onBack={leaveDocs}
+        onIntake={() => {
+          leaveDocs();
+          setState((s) => ({ ...s, step: 'intake', qi: 0 }));
+        }}
+      />
+    );
+  } else if (state.step === 'plan' && complete) {
     view = <Plan state={state} setState={setState} onEdit={() => setState((s) => ({ ...s, step: 'intake', qi: 0 }))} />;
   } else if (state.step === 'intake') {
     view = <Intake state={state} setState={setState} onDone={() => setState((s) => ({ ...s, step: 'plan' }))} />;
@@ -488,7 +529,7 @@ export default function App() {
 
   return (
     <div className="wrap">
-      <Nav theme={theme} onTheme={toggleTheme} />
+      <Nav theme={theme} onTheme={toggleTheme} page={docsView ? 'docs' : 'start'} />
       <main>{view}</main>
     </div>
   );

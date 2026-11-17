@@ -2,39 +2,39 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap">
 <style>
 /* Layout: one reading column. A sticky readiness bar stays on screen while the
    ledger-style assessment rows are completed below a score summary. */
 :root {
-  --bg: #0F1B2D;
-  --surface: #15243A;
-  --surface-2: #1C2E49;
-  --line: rgba(242, 240, 233, 0.16);
-  --fg: #F2F0E9;
-  --muted: #A9B3C2;
-  --gold: #D4AE2E;
-  --on-gold: #0F1B2D;
-  --brick: #E8735B;
-  --good: #5BBF8A;
-  --focus: #8DBBFF;
-  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
-  --font-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bg: #0B1626;
+  --surface: #101D32;
+  --surface-2: #172A45;
+  --line: rgba(230, 237, 245, 0.16);
+  --fg: #E6EDF5;
+  --muted: #9FB1C7;
+  --gold: #16B8A6;
+  --on-gold: #0B1626;
+  --brick: #F08A92;
+  --good: #3FCB8A;
+  --focus: #6FB0F0;
+  --font-display: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #E8ECF2;
-    --line: rgba(15, 27, 45, 0.16); --fg: #0F1B2D; --muted: #4A5568;
-    --gold: #8A6A00; --on-gold: #FFFFFF; --brick: #A63A26; --good: #1F7A4D; --focus: #1D5FBF;
+    --bg: #F4F7FA; --surface: #FFFFFF; --surface-2: #EAF0F6;
+    --line: rgba(16, 29, 50, 0.16); --fg: #101D32; --muted: #52647B;
+    --gold: #0B7F72; --on-gold: #FFFFFF; --brick: #C23B45; --good: #15803D; --focus: #2B6FB5;
     color-scheme: light;
   }
 }
 :root[data-theme="light"] {
-  --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #E8ECF2;
-  --line: rgba(15, 27, 45, 0.16); --fg: #0F1B2D; --muted: #4A5568;
-  --gold: #8A6A00; --on-gold: #FFFFFF; --brick: #A63A26; --good: #1F7A4D; --focus: #1D5FBF;
+  --bg: #F4F7FA; --surface: #FFFFFF; --surface-2: #EAF0F6;
+  --line: rgba(16, 29, 50, 0.16); --fg: #101D32; --muted: #52647B;
+  --gold: #0B7F72; --on-gold: #FFFFFF; --brick: #C23B45; --good: #15803D; --focus: #2B6FB5;
   color-scheme: light;
 }
 
@@ -200,7 +200,7 @@ textarea#fallback { width: 100%; min-height: 8rem; margin-top: .75rem; backgroun
 </style>
 
 <div class="wrap">
-  <nav class="nav" aria-label="GRC tools"><span class="lbl">GRC TOOLS</span><a href="/">Start here</a><a href="/readiness-check" aria-current="page">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
+  <nav class="nav" aria-label="GRC tools"><span class="lbl">GRC TOOLS</span><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/readiness-check" aria-current="page">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
 <script>
 (function () {
   var KEY = 'grc-theme', root = document.documentElement, btn = document.getElementById('themeBtn');
