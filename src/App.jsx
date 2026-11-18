@@ -108,7 +108,18 @@ function Nav({ theme, onTheme, page }) {
   );
 }
 
-function Intro({ onStart, hasAnswers, onResume }) {
+function Intro({ onStart, hasAnswers, onResume, region }) {
+  const r = Array.isArray(region) ? region : [];
+  const uk = r.length === 0 || r.includes('uk');
+  const ng = r.length === 0 || r.includes('nigeria');
+  const list = [];
+  if (uk) list.push('UK GDPR');
+  if (ng) list.push('the Nigeria Data Protection Act');
+  if (uk) list.push('Cyber Essentials');
+  list.push('ISO 27001', 'AI governance');
+  const words = ['zero', 'one', 'two', 'three', 'four', 'five'];
+  const n = words[list.length];
+  const joined = list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1];
   return (
     <section className="intro">
       <div className="dict">
@@ -120,13 +131,13 @@ function Intro({ onStart, hasAnswers, onResume }) {
           <li>Guidance; direction.</li>
         </ol>
         <p className="dict-use">
-          <em>In use:</em> &ldquo;Her business found its ÌLÀNÀ: one plan, four frameworks.&rdquo;
+          <em>In use:</em> &ldquo;Her business found its ÌLÀNÀ: one plan, {n} frameworks.&rdquo;
         </p>
       </div>
       <h1>Do it once, cover many.</h1>
       <p className="sub">Where do I start with security, data protection and AI?</p>
       <p className="lede">
-        UK GDPR, Cyber Essentials, ISO 27001 and AI governance sound like four separate mountains. They overlap heavily.
+        {joined.charAt(0).toUpperCase() + joined.slice(1)} sound like {n} separate mountains. They overlap heavily.
         Answer 14 plain questions and get one 90-day plan that shows which of them you need, and which actions cover
         several at once.
       </p>
@@ -152,7 +163,7 @@ function Intro({ onStart, hasAnswers, onResume }) {
             <strong>Make it understandable.</strong> Plain English for people who have never read a standard.
           </li>
           <li>
-            <strong>Show the overlap.</strong> One plan that covers UK GDPR, Cyber Essentials, ISO 27001 and AI governance together, so work is never done twice.
+            <strong>Show the overlap.</strong> One plan that covers {joined} together, so work is never done twice.
           </li>
           <li>
             <strong>Keep your information yours.</strong> No sign-up, and nothing you enter leaves your browser.
@@ -647,6 +658,7 @@ export default function App() {
   } else {
     view = (
       <Intro
+        region={state.a && state.a.region}
         hasAnswers={hasAnswers}
         onStart={() => setState({ a: {}, d: {}, step: 'intake', qi: 0 })}
         onResume={() => setState((s) => ({ ...s, step: complete ? 'plan' : 'intake' }))}
