@@ -4,6 +4,7 @@
 export const FRAMEWORKS = [
   { id: 'ukgdpr', name: 'UK GDPR', short: 'UK GDPR', kind: 'The law on personal data' },
   { id: 'ce', name: 'Cyber Essentials', short: 'Cyber Essentials', kind: 'Government-backed security baseline' },
+  { id: 'ndpa', name: 'Nigeria Data Protection Act', short: 'NDPA', kind: 'Nigerian law on personal data' },
   { id: 'iso27001', name: 'ISO 27001', short: 'ISO 27001', kind: 'International security management standard' },
   { id: 'iso42001', name: 'ISO 42001', short: 'ISO 42001', kind: 'International AI management standard' },
 ];
@@ -25,13 +26,16 @@ export const QUESTIONS = [
   },
   {
     id: 'data',
-    q: 'What personal data do you hold?',
-    help: 'Personal data is anything that identifies a person, such as a name, email address or account. Staff records count.',
-    type: 'single',
+    q: 'What personal data and records do you hold?',
+    help: 'Choose all that apply. Records about people count as personal data, including contacts at other organisations and at suppliers.',
+    type: 'multi',
+    exclusive: 'none',
     options: [
-      { v: 'customers', label: 'Customer or client details' },
-      { v: 'staff', label: 'Staff details only' },
-      { v: 'none', label: 'Very little or none that I know of' },
+      { v: 'staff', label: 'Staff records' },
+      { v: 'individuals', label: 'Customers, clients or members of the public (individuals)' },
+      { v: 'orgs', label: 'Other organisations and their contacts' },
+      { v: 'suppliers', label: 'Third-party suppliers and their contacts' },
+      { v: 'none', label: 'None that I know of' },
     ],
   },
   {
@@ -60,10 +64,12 @@ export const QUESTIONS = [
     q: 'Who do you sell to?',
     help: 'Choose all that apply.',
     type: 'multi',
+    exclusive: 'none',
     options: [
       { v: 'consumers', label: 'Consumers' },
       { v: 'business', label: 'Other businesses' },
       { v: 'public', label: 'Public sector or government' },
+      { v: 'none', label: 'We do not sell to anyone yet' },
     ],
   },
   {
@@ -152,11 +158,13 @@ export const QUESTIONS = [
   {
     id: 'region',
     q: 'Where do you operate?',
-    help: 'This affects which AI and data rules may apply.',
-    type: 'single',
+    help: 'Choose all that apply. This decides which laws and schemes appear in your plan.',
+    type: 'multi',
     options: [
-      { v: 'uk', label: 'UK only' },
-      { v: 'ukeu', label: 'UK and the EU' },
+      { v: 'uk', label: 'United Kingdom' },
+      { v: 'nigeria', label: 'Nigeria' },
+      { v: 'eu', label: 'EU countries' },
+      { v: 'other', label: 'Elsewhere' },
     ],
   },
   {
@@ -176,6 +184,17 @@ export const QUESTIONS = [
 
 const has = (a, k, v) => (Array.isArray(a[k]) ? a[k] : []).includes(v);
 
+export const holdsPersonal = (a) => ['staff', 'individuals', 'orgs', 'suppliers'].some((v) => has(a, 'data', v));
+export const holdsClientData = (a) => has(a, 'data', 'individuals') || has(a, 'data', 'orgs');
+
+export function visibleFrameworks(a) {
+  return FRAMEWORKS.filter((f) => {
+    if (f.id === 'ukgdpr' || f.id === 'ce') return has(a, 'region', 'uk');
+    if (f.id === 'ndpa') return has(a, 'region', 'nigeria');
+    return true;
+  });
+}
+
 export const isLarge = (a) => a.size === 's5' || a.size === 's6';
 const midOrAbove = (a) => ['s3', 's4', 's5', 's6'].includes(a.size);
 
@@ -183,20 +202,39 @@ export function assessFrameworks(a) {
   const out = {};
 
   // UK GDPR
-  if (a.data === 'customers' || a.data === 'staff') {
+  if (holdsPersonal(a)) {
+    const what = holdsClientData(a)
+      ? 'You hold personal data about customers, clients or their organisations, so UK GDPR applies to you.'
+      : 'You hold personal data about staff or suppliers, so UK GDPR applies to you.';
     out.ukgdpr = {
       tone: 'now',
       label: 'Required by law',
-      why:
-        a.data === 'customers'
-          ? 'You hold customer or client personal data, so UK GDPR applies to you.' + (isLarge(a) ? ' At your scale, check whether you must appoint a Data Protection Officer (Art. 37) and keep full records of processing.' : '')
-          : 'You hold staff personal data, so UK GDPR applies to you.' + (isLarge(a) ? ' At your scale, check whether you must appoint a Data Protection Officer (Art. 37).' : ''),
+      why: what + (isLarge(a) ? ' At your scale, check whether you must appoint a Data Protection Officer (Art. 37) and keep full records of processing.' : ''),
     };
   } else {
     out.ukgdpr = {
       tone: 'now',
       label: 'Probably applies',
       why: 'Almost every business holds some personal data, even just staff records and customer emails. Check before assuming it does not apply.',
+    };
+  }
+
+  // Nigeria Data Protection Act
+  if (holdsPersonal(a)) {
+    out.ndpa = {
+      tone: 'now',
+      label: 'Required by law',
+      why:
+        'You operate in Nigeria and hold personal data, so the NDPA applies to you.' +
+        (isLarge(a)
+          ? ' At your scale, check whether you count as a data controller or processor of major importance, which brings registration with the NDPC, a Data Protection Officer and annual compliance audit returns.'
+          : ' Check the NDPC guidance on whether you must register as a data controller or processor of major importance.'),
+    };
+  } else {
+    out.ndpa = {
+      tone: 'now',
+      label: 'Probably applies',
+      why: 'Almost every organisation holds some personal data, even staff records and contacts. Check before assuming the NDPA does not apply.',
     };
   }
 
@@ -229,7 +267,7 @@ export function assessFrameworks(a) {
       label: 'Optional',
       why: 'ISO 27001 covers these controls, but some clients still ask for the Cyber Essentials certificate itself.',
     };
-  } else if (a.data === 'customers' || a.cloud === 'yes') {
+  } else if (holdsClientData(a) || a.cloud === 'yes') {
     out.ce = {
       tone: 'next',
       label: 'Smart first step',
@@ -272,7 +310,7 @@ export function assessFrameworks(a) {
       label: 'Worth planning',
       why:
         'You build or sell AI, so clients may start asking how you govern it.' +
-        (a.region === 'ukeu' ? ' You operate in the EU, so check whether the EU AI Act applies to what you sell.' : ''),
+        (has(a, 'region', 'eu') ? ' You operate in the EU, so check whether the EU AI Act applies to what you sell.' : ''),
     };
   } else if (a.ai === 'use' && isLarge(a)) {
     out.iso42001 = {
@@ -318,6 +356,8 @@ export const ACTIONS = [
     ],
     evidence: 'A short note or policy section naming the role.',
     fw: {
+      ndpa: 'Data processors and cross-border transfers',
+      ndpa: 'Data Protection Officer and accountability',
       ukgdpr: 'Accountability (Art. 5(2) and Art. 24)',
       ce: '',
       iso27001: 'Clause 5.3 and Annex A 5.2',
@@ -341,6 +381,7 @@ export const ACTIONS = [
     ],
     evidence: 'The approved policy with a date and version.',
     fw: {
+      ndpa: 'Appropriate technical and organisational measures',
       ukgdpr: 'Appropriate measures (Art. 24 and Art. 32)',
       ce: '',
       iso27001: 'Clause 5.2 and Annex A 5.1',
@@ -363,6 +404,7 @@ export const ACTIONS = [
     ],
     evidence: 'A simple spreadsheet, reviewed at least once a year.',
     fw: {
+      ndpa: 'Supports your records of processing',
       ukgdpr: 'Supports your records of processing (Art. 30)',
       ce: 'Scoping: every device and service in scope',
       iso27001: 'Annex A 5.9 Inventory of information and assets',
@@ -385,6 +427,7 @@ export const ACTIONS = [
     ],
     evidence: 'Screenshot or report showing MFA enforced for all users.',
     fw: {
+      ndpa: 'Security of personal data',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: 'User access control (MFA on cloud services)',
       iso27001: 'Annex A 8.5 Secure authentication',
@@ -407,6 +450,7 @@ export const ACTIONS = [
     ],
     evidence: 'List of admin accounts with the reason for each, dated.',
     fw: {
+      ndpa: 'Security of personal data',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: 'User access control (admin accounts)',
       iso27001: 'Annex A 8.2 Privileged access rights and A.5.15 Access control',
@@ -429,6 +473,7 @@ export const ACTIONS = [
     ],
     evidence: 'Update settings screenshots or a patch report.',
     fw: {
+      ndpa: 'Security of personal data',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: 'Security update management',
       iso27001: 'Annex A 8.8 Management of technical vulnerabilities',
@@ -451,6 +496,7 @@ export const ACTIONS = [
     ],
     evidence: 'Screenshot or console report showing protection active.',
     fw: {
+      ndpa: 'Security of personal data',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: 'Malware protection',
       iso27001: 'Annex A 8.7 Protection against malware',
@@ -473,6 +519,7 @@ export const ACTIONS = [
     ],
     evidence: 'Router or firewall settings screenshot and a note of the date checked.',
     fw: {
+      ndpa: 'Security of personal data',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: 'Firewalls',
       iso27001: 'Annex A 8.20 Networks security',
@@ -494,12 +541,35 @@ export const ACTIONS = [
     ],
     evidence: 'A record of processing activities (a simple table is fine).',
     fw: {
+      ndpa: 'Principles of processing and records',
       ukgdpr: 'Records of processing (Art. 30) and principles (Art. 5)',
       ce: '',
       iso27001: 'Annex A 5.34 Privacy and protection of PII and A.5.12 Classification',
       iso42001: 'Data for AI systems (Annex A.7)',
     },
-    when: (a) => a.data !== 'none',
+    when: (a) => holdsPersonal(a),
+  },
+  {
+    id: 'ndpcreg',
+    title: 'Check whether you must register with the NDPC and file annual returns',
+    phase: 30,
+    effort: 'Small',
+    owner: 'Data protection lead',
+    why: 'Organisations that handle enough personal data, or work in certain sectors, can be classed as data controllers or processors of major importance. Those have extra duties such as registering with the Nigeria Data Protection Commission, appointing a Data Protection Officer and filing annual compliance audit returns.',
+    how: [
+      'Check the NDPC\u2019s current criteria for \u201cmajor importance\u201d against your own activities.',
+      'If you qualify, register and keep the confirmation on file.',
+      'Confirm a Data Protection Officer is named, and diarise the annual compliance audit return.',
+    ],
+    evidence: 'Registration confirmation, the Data Protection Officer appointment and the filed return.',
+    fw: {
+      ukgdpr: '',
+      ce: '',
+      ndpa: 'Registration, Data Protection Officer and compliance audit returns',
+      iso27001: '',
+      iso42001: '',
+    },
+    when: (a) => has(a, 'region', 'nigeria') && holdsPersonal(a),
   },
   {
     id: 'aipolicy',
@@ -516,6 +586,7 @@ export const ACTIONS = [
     ],
     evidence: 'The approved policy and a record that staff have read it.',
     fw: {
+      ndpa: 'Security and processor duties',
       ukgdpr: 'Security and processors (Art. 5(1)(f) and Art. 28)',
       ce: '',
       iso27001: 'Annex A 5.10 Acceptable use of information and other assets',
@@ -538,6 +609,7 @@ export const ACTIONS = [
     ],
     evidence: 'A short build checklist per device type, with dates.',
     fw: {
+      ndpa: 'Security of personal data',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: 'Secure configuration',
       iso27001: 'Annex A 8.9 Configuration management and A.8.1 User endpoint devices',
@@ -560,6 +632,7 @@ export const ACTIONS = [
     ],
     evidence: 'Completed checklists for recent joiners and leavers.',
     fw: {
+      ndpa: 'Security of personal data',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: 'User access control (remove accounts no longer needed)',
       iso27001: 'Annex A 6.1 Screening, 5.18 Access rights and 6.5 After termination',
@@ -582,6 +655,7 @@ export const ACTIONS = [
     ],
     evidence: 'A short device policy and a list of devices that connect.',
     fw: {
+      ndpa: 'Security of personal data',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: 'Scoping: personal devices used for work are in scope',
       iso27001: 'Annex A 8.1 User endpoint devices and A.6.7 Remote working',
@@ -604,6 +678,7 @@ export const ACTIONS = [
     ],
     evidence: 'Backup schedule and a dated test restore result.',
     fw: {
+      ndpa: 'Availability and security of personal data',
       ukgdpr: 'Availability and resilience (Art. 32(1))',
       ce: '',
       iso27001: 'Annex A 8.13 Information backup',
@@ -626,6 +701,7 @@ export const ACTIONS = [
     ],
     evidence: 'Training material and an attendance record.',
     fw: {
+      ndpa: 'Staff awareness and accountability',
       ukgdpr: 'Security of processing (Art. 32)',
       ce: '',
       iso27001: 'Annex A 6.3 Awareness, education and training',
@@ -648,12 +724,13 @@ export const ACTIONS = [
     ],
     evidence: 'The published notice with a review date.',
     fw: {
+      ndpa: 'Transparency and privacy information',
       ukgdpr: 'Transparency (Arts 13 and 14)',
       ce: '',
       iso27001: 'Annex A 5.34 Privacy and protection of PII',
       iso42001: '',
     },
-    when: (a) => a.data === 'customers',
+    when: (a) => holdsClientData(a),
   },
   {
     id: 'rights',
@@ -670,12 +747,13 @@ export const ACTIONS = [
     ],
     evidence: 'Lawful basis record and a request log.',
     fw: {
+      ndpa: 'Lawful basis and rights of data subjects',
       ukgdpr: 'Lawful basis (Art. 6) and individual rights (Arts 15 to 22)',
       ce: '',
       iso27001: 'Annex A 5.34 Privacy and protection of PII',
       iso42001: '',
     },
-    when: (a) => a.data !== 'none',
+    when: (a) => holdsPersonal(a),
   },
   {
     id: 'incident',
@@ -692,6 +770,7 @@ export const ACTIONS = [
     ],
     evidence: 'The plan, an incident log, and notes from a practice run.',
     fw: {
+      ndpa: 'Breach notification to the NDPC and affected people',
       ukgdpr: 'Breach reporting (Arts 33 and 34)',
       ce: '',
       iso27001: 'Annex A 5.24 to 5.28 Incident management',
@@ -719,7 +798,7 @@ export const ACTIONS = [
       iso27001: 'Annex A 5.19 to 5.22 Supplier relationships',
       iso42001: 'Third-party and customer relationships (Annex A.10)',
     },
-    when: (a) => a.suppliers === 'yes' || a.cloud === 'yes',
+    when: (a) => a.suppliers === 'yes' || a.cloud === 'yes' || has(a, 'data', 'suppliers'),
   },
   {
     id: 'aiinventory',
@@ -735,6 +814,7 @@ export const ACTIONS = [
     ],
     evidence: 'An AI tool register with approval dates.',
     fw: {
+      ndpa: 'Supports your records of processing',
       ukgdpr: 'Supports records of processing (Art. 30)',
       ce: '',
       iso27001: 'Annex A 5.9 Inventory of information and assets',
@@ -756,6 +836,7 @@ export const ACTIONS = [
     ],
     evidence: 'A completed assessment signed off by a director.',
     fw: {
+      ndpa: 'Data privacy impact assessment',
       ukgdpr: 'Data protection impact assessment (Art. 35)',
       ce: '',
       iso27001: '',
@@ -777,6 +858,7 @@ export const ACTIONS = [
     ],
     evidence: 'An AI risk and impact assessment for each system.',
     fw: {
+      ndpa: 'Automated decision-making and impact assessment',
       ukgdpr: 'Automated decisions (Art. 22) and impact assessment (Art. 35)',
       ce: '',
       iso27001: '',
@@ -798,6 +880,7 @@ export const ACTIONS = [
     ],
     evidence: 'The register, reviewed at least twice a year.',
     fw: {
+      ndpa: 'Risk-based security of personal data',
       ukgdpr: 'Risk-based security (Art. 32)',
       ce: '',
       iso27001: 'Clauses 6.1.2 and 8.2 Risk assessment',
@@ -845,7 +928,7 @@ export const ACTIONS = [
       iso27001: '',
       iso42001: '',
     },
-    when: (a) => !has(a, 'certs', 'ce') && !has(a, 'certs', 'cep'),
+    when: (a) => has(a, 'region', 'uk') && !has(a, 'certs', 'ce') && !has(a, 'certs', 'cep'),
   },
   {
     id: 'review',
@@ -861,6 +944,7 @@ export const ACTIONS = [
     ],
     evidence: 'Dated reviews and your readiness scores over time.',
     fw: {
+      ndpa: 'Periodic review and compliance audit returns where required',
       ukgdpr: 'Reviewing measures (Art. 24)',
       ce: 'Annual renewal',
       iso27001: 'Clauses 7.5, 9.1 and 9.3',

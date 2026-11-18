@@ -10,7 +10,23 @@ const OL = (items) => ({ t: 'ol', items });
 const T = (head, rows) => ({ t: 'table', head, rows });
 const S = (title, blocks, why) => ({ title, blocks, why });
 
-const has = (a, k, v) => (a[k] || []).includes(v);
+const has = (a, k, v) => (Array.isArray(a[k]) ? a[k] : []).includes(v);
+
+const holdsPersonal = (a) => ['staff', 'individuals', 'orgs', 'suppliers'].some((v) => has(a, 'data', v));
+
+// Names of the data protection law(s) and regulator(s) that apply, from where the business operates.
+const laws = (a) => {
+  const l = [];
+  if (has(a, 'region', 'uk')) l.push('UK GDPR');
+  if (has(a, 'region', 'nigeria')) l.push('the Nigeria Data Protection Act (NDPA)');
+  return l.length ? l.join(' and ') : 'the data protection law that applies to us';
+};
+const regulators = (a) => {
+  const r = [];
+  if (has(a, 'region', 'uk')) r.push('the ICO (ico.org.uk)');
+  if (has(a, 'region', 'nigeria')) r.push('the NDPC (ndpc.gov.ng)');
+  return r.length ? r.join(' and ') : 'the data protection regulator';
+};
 
 export const DOC_LIST = [
   { id: 'isp', label: 'Information security policy', file: 'information-security-policy' },
@@ -31,14 +47,14 @@ export function buildISP(a, d) {
   const cloud = a.cloud === 'yes';
   const suppliers = a.suppliers === 'yes' || cloud;
   const special = a.special === 'yes';
-  const personal = a.data !== 'none';
+  const personal = holdsPersonal(a);
   const usesAI = a.ai !== 'none';
   const wantsCE = !has(a, 'certs', 'ce') && !has(a, 'certs', 'cep') && (has(a, 'sells', 'public') || a.asked === 'yes');
 
   const sections = [
     S('Purpose', [
       P(
-        `This policy sets out how ${d.biz} protects the information it holds and the systems it relies on. It exists so that everyone who works for us knows what is expected, so that customers and partners can trust us with their information, and so that we meet our legal duties, including under UK GDPR.`
+        `This policy sets out how ${d.biz} protects the information it holds and the systems it relies on. It exists so that everyone who works for us knows what is expected, so that customers and partners can trust us with their information, and so that we meet our legal duties, including under ${laws(a)}.`
       ),
     ]),
     S('Scope', [
@@ -141,7 +157,7 @@ export function buildISP(a, d) {
     ),
   ];
   if (personal) {
-    handling.push(P('Personal data is handled in line with UK GDPR and our privacy information, and is kept only as long as we need it.'));
+    handling.push(P(`Personal data is handled in line with ${laws(a)} and our privacy information, and is kept only as long as we need it.`));
   }
   if (usesAI) {
     handling.push(P('Staff use of AI tools follows our AI Use Policy.'));
@@ -359,7 +375,7 @@ export function buildAI(a, d) {
   }
 
   if (ai === 'build') {
-    const eu = a.region === 'ukeu';
+    const eu = has(a, 'region', 'eu');
     sections.push(
       S(
         'AI in the products and services we sell',
@@ -371,7 +387,7 @@ export function buildAI(a, d) {
             'Data used to train or test AI is used lawfully, is documented, and does not include information we have no right to use.',
             'Customers are told in plain language when they are dealing with AI and what its limits are.',
             'We monitor performance and complaints after release, and serious problems are handled as incidents.',
-            'Where AI processes personal data in a way likely to be high risk, we complete a data protection impact assessment first. Where AI makes decisions with legal or similarly significant effects on people, we take advice on the UK GDPR rules on automated decisions.',
+            `Where AI processes personal data in a way likely to be high risk, we complete a data protection impact assessment first. Where AI makes decisions with legal or similarly significant effects on people, we take advice on the rules on automated decisions under ${laws(a)}.`,
             ...(eu
               ? ['Because we operate in the EU, we check whether the EU AI Act applies to each AI system we place on the EU market or whose output is used there, and we record the result.']
               : []),
@@ -411,9 +427,9 @@ export function buildIRP(a, d) {
   const special = a.special === 'yes';
   const usesAI = a.ai !== 'none';
   const suppliers = a.suppliers === 'yes';
-  const eu = a.region === 'ukeu';
+  const eu = has(a, 'region', 'eu');
   const public_ = has(a, 'sells', 'public');
-  const personal = a.data !== 'none';
+  const personal = holdsPersonal(a);
 
   const examples = [
     'A lost or stolen laptop, phone or storage device.',
@@ -426,8 +442,20 @@ export function buildIRP(a, d) {
     'A system failure that stops us working or makes information unavailable.',
   ];
 
+  const uk = has(a, 'region', 'uk');
+  const ng = has(a, 'region', 'nigeria');
   const notify = [
-    `The ICO: if a breach of personal data is likely to result in a risk to people's rights and freedoms, we report it to the Information Commissioner's Office without undue delay and within 72 hours of becoming aware of it. Reports are made at ico.org.uk, or by calling the ICO helpline.`,
+    ...(uk
+      ? [
+          `The ICO: if a breach of personal data is likely to result in a risk to people's rights and freedoms, we report it to the Information Commissioner's Office without undue delay and within 72 hours of becoming aware of it. Reports are made at ico.org.uk, or by calling the ICO helpline.`,
+        ]
+      : []),
+    ...(ng
+      ? [
+          `The NDPC: if a breach of personal data is likely to result in a risk to people's rights and freedoms, we notify the Nigeria Data Protection Commission within 72 hours of becoming aware of it. We follow the current reporting process published at ndpc.gov.ng.`,
+        ]
+      : []),
+    ...(!uk && !ng ? ['The data protection regulator: we report notifiable breaches within the deadline set by the law that applies to us.'] : []),
     'The people affected: if the breach is likely to result in a high risk to them, we tell them without undue delay, in clear language. We explain what happened, the likely consequences, what we have done and what they can do to protect themselves.',
     'If we decide not to report, we record the reasons.',
     'Our clients: where we handle personal data on behalf of a client, we tell them without undue delay and follow our contract with them. Contracts can set shorter deadlines, so we check each one.',
@@ -453,7 +481,7 @@ export function buildIRP(a, d) {
         [
           ['Incident lead', `${d.ownerName}`, 'Leads the response, makes decisions and keeps the record'],
           ['Deputy', '[Name]', 'Covers when the lead is not available'],
-          ['Director', `${d.approver}`, 'Approves notifications to the ICO, clients and affected people'],
+          ['Director', `${d.approver}`, 'Approves notifications to the regulator, clients and affected people'],
           ...(suppliers ? [['IT support', '[Supplier name and contact]', 'Helps with technical containment and recovery']] : []),
         ]
       ),
@@ -502,13 +530,13 @@ export function buildIRP(a, d) {
   if (personal) {
     sections.push(
       S('Timeline', [
-        P('These are our own targets. The legal deadline for reporting a notifiable personal data breach to the ICO is 72 hours from becoming aware of it.'),
+        P(`These are our own targets. For a notifiable personal data breach, the reporting deadline under the law is 72 hours from becoming aware of it, and it is reported to ${regulators(a)}.`),
         T(
           ['When', 'What'],
           [
             ['Straight away', 'Report to the incident lead and start containing'],
-            ['Within 24 hours', 'Assess the incident and decide whether the ICO must be told'],
-            ['Within 72 hours', 'Report to the ICO if required, and tell affected people if the risk is high'],
+            ['Within 24 hours', 'Assess the incident and decide whether the regulator must be told'],
+            ['Within 72 hours', 'Report to the regulator if required, and tell affected people if the risk is high'],
             ['Within 14 days', 'Complete the review and agree actions'],
           ]
         ),
@@ -556,7 +584,7 @@ export function buildIRP(a, d) {
           ['Information and systems involved', '[Details]'],
           ['Personal data involved?', '[Yes or no, and how many people]'],
           ['Action taken', '[Details]'],
-          ['ICO told?', '[Yes or no, date and reference]'],
+          ['Regulator told?', '[Yes or no, which regulator, date and reference]'],
           ['Individuals told?', '[Yes or no, date]'],
           ['Lessons and actions', '[Details, owner and date]'],
           ['Closed', '[Date]'],
@@ -565,7 +593,7 @@ export function buildIRP(a, d) {
     ]),
     S('Practice and review', [
       P(
-        `We practise this plan at least once a year with a short scenario exercise. The plan is reviewed at least every ${d.months} months and after every serious incident. Please check the current ICO reporting guidance at ico.org.uk when you review it.`
+        `We practise this plan at least once a year with a short scenario exercise. The plan is reviewed at least every ${d.months} months and after every serious incident. Please check the current reporting guidance from ${regulators(a)} when you review it.`
       ),
     ])
   );
@@ -575,7 +603,7 @@ export function buildIRP(a, d) {
     meta: metaRows(d),
     todo: [
       'Fill in every highlighted [placeholder], especially the contact details and who covers for the incident lead.',
-      'Check the current ICO reporting guidance and contact details at ico.org.uk before you adopt this plan.',
+      `Check the current reporting guidance and contact details from ${regulators(a)} before you adopt this plan.`,
       'Check your client and public sector contracts for earlier notification deadlines than 72 hours.',
       'Ask a director to approve it, then make sure everyone knows how to report a problem. Keep a copy somewhere that does not depend on your own systems.',
     ],

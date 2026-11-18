@@ -807,3 +807,24 @@ mark.ph {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+.opts.err {
+  outline: 2px solid var(--brick);
+  outline-offset: 4px;
+  border-radius: 0.6rem;
+}
+.warn {
+  color: var(--brick);
+  font-weight: 600;
+  margin-top: 0.9rem;
+}
+.note-line {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  max-width: 44rem;
+}
+.t-ndpa {
+  color: var(--good);
+  border-color: var(--good);
+}

@@ -7,6 +7,7 @@ import {
   assessFrameworks,
   buildPlan,
   isLarge,
+  visibleFrameworks,
 } from './data.js';
 import Docs from './Docs.jsx';
 
@@ -19,6 +20,10 @@ function migrate(a) {
   ['certs', 'goal'].forEach((k) => {
     if (typeof out[k] === 'string') out[k] = [out[k] === 'iso' ? 'iso27001' : out[k]];
   });
+  if (typeof out.data === 'string') out.data = out.data === 'customers' ? ['individuals'] : out.data === 'staff' ? ['staff'] : ['none'];
+  if (typeof out.region === 'string') out.region = out.region === 'ukeu' ? ['uk', 'eu'] : ['uk'];
+  if (Array.isArray(out.sells) && out.sells.length === 0) out.sells = ['none'];
+  if (Object.keys(out).length > 0 && out.policies === undefined) out.policies = ['none'];
   return out;
 }
 
@@ -164,15 +169,18 @@ function Intro({ onStart, hasAnswers, onResume }) {
 function Intake({ state, setState, onDone }) {
   const q = QUESTIONS[state.qi];
   const val = state.a[q.id];
-  const answered = q.type === 'multi' ? !q.required || (val || []).length > 0 : Boolean(val);
+  const answered = q.type === 'multi' ? (val || []).length > 0 : Boolean(val);
   const total = QUESTIONS.length;
+  const [warn, setWarn] = useState(false);
   const headRef = useRef(null);
 
   useEffect(() => {
     if (headRef.current) headRef.current.focus();
+    setWarn(false);
   }, [state.qi]);
 
   const choose = (v) => {
+    setWarn(false);
     setState((s) => {
       let next;
       if (q.type === 'multi') {
@@ -201,7 +209,12 @@ function Intake({ state, setState, onDone }) {
         {q.q}
       </h2>
       <p className="help">{q.help}</p>
-      <div className="opts" role={q.type === 'multi' ? 'group' : 'radiogroup'} aria-labelledby="q-title">
+      <div
+        className={'opts' + (warn ? ' err' : '')}
+        role={q.type === 'multi' ? 'group' : 'radiogroup'}
+        aria-labelledby="q-title"
+        aria-describedby={warn ? 'q-warn' : undefined}
+      >
         {q.options.map((o) => (
           <button
             key={o.v}
@@ -216,6 +229,11 @@ function Intake({ state, setState, onDone }) {
           </button>
         ))}
       </div>
+      {warn && (
+        <p id="q-warn" className="warn" role="alert">
+          {q.type === 'multi' ? 'Please choose at least one option to continue.' : 'Please choose an option to continue.'}
+        </p>
+      )}
       <div className="row">
         <button
           className="btn"
@@ -225,8 +243,14 @@ function Intake({ state, setState, onDone }) {
         </button>
         <button
           className="btn primary"
-          disabled={!answered}
-          onClick={() => (state.qi === total - 1 ? onDone() : setState((s) => ({ ...s, qi: s.qi + 1 })))}
+          onClick={() => {
+            if (!answered) {
+              setWarn(true);
+              return;
+            }
+            if (state.qi === total - 1) onDone();
+            else setState((s) => ({ ...s, qi: s.qi + 1 }));
+          }}
         >
           {state.qi === total - 1 ? 'See my plan' : 'Next'}
         </button>
@@ -240,8 +264,8 @@ function FwTag({ id }) {
   return <span className={'tag t-' + id}>{f.short}</span>;
 }
 
-function ActionItem({ item, done, onToggle, existing }) {
-  const mapped = FRAMEWORKS.filter((f) => item.fw[f.id]);
+function ActionItem({ item, done, onToggle, existing, vis }) {
+  const mapped = vis.filter((f) => item.fw[f.id]);
   return (
     <li className={'act' + (done ? ' done' : '')}>
       <div className="act-top">
@@ -290,6 +314,8 @@ function ActionItem({ item, done, onToggle, existing }) {
   );
 }
 
+const has_uk = (a) => Array.isArray(a.region) && a.region.includes('uk');
+
 function Plan({ state, setState, onEdit }) {
   const [filter, setFilter] = useState('all');
   const [armed, setArmed] = useState(false);
@@ -297,13 +323,14 @@ function Plan({ state, setState, onEdit }) {
   const [fallback, setFallback] = useState('');
   const a = state.a;
   const fw = useMemo(() => assessFrameworks(a), [a]);
+  const vis = useMemo(() => visibleFrameworks(a), [a]);
   const plan = useMemo(() => buildPlan(a), [a]);
   const doneCount = plan.filter((x) => state.d[x.id]).length;
   const pct = plan.length ? Math.round((doneCount / plan.length) * 100) : 0;
-  const nowList = FRAMEWORKS.filter((f) => fw[f.id].tone === 'now').map((f) => f.short);
+  const nowList = vis.filter((f) => fw[f.id].tone === 'now').map((f) => f.short);
   const goals = (Array.isArray(a.goal) ? a.goal : []).map((g) => GOAL_LINES[g]).filter(Boolean);
   const goalText = goals.length ? goals.map((g, i) => (i === 0 ? g : g.charAt(0).toLowerCase() + g.slice(1))).join('; ') : 'Get organised';
-  const overlap = plan.filter((x) => FRAMEWORKS.filter((f) => x.fw[f.id]).length >= 2).length;
+  const overlap = plan.filter((x) => vis.filter((f) => x.fw[f.id]).length >= 2).length;
 
   const large = isLarge(a);
   const have = Array.isArray(a.policies) ? a.policies : [];
@@ -432,8 +459,13 @@ function Plan({ state, setState, onEdit }) {
 
       <section aria-labelledby="fw-h">
         <h2 id="fw-h">What applies to you</h2>
+        {!has_uk(a) && (
+          <p className="note-line">
+            UK rules (UK GDPR and Cyber Essentials) are hidden because you did not choose the United Kingdom. UK GDPR can still apply if you offer goods or services to people in the UK.
+          </p>
+        )}
         <div className="fws">
-          {FRAMEWORKS.map((f) => (
+          {vis.map((f) => (
             <article key={f.id} className={'fw tone-' + fw[f.id].tone}>
               <p className="fw-kind">{f.kind}</p>
               <h3>{f.name}</h3>
@@ -461,7 +493,7 @@ function Plan({ state, setState, onEdit }) {
           <button className={'fchip' + (filter === 'all' ? ' on' : '')} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
             All actions
           </button>
-          {FRAMEWORKS.map((f) => (
+          {vis.map((f) => (
             <button
               key={f.id}
               className={'fchip' + (filter === f.id ? ' on' : '')}
@@ -483,7 +515,7 @@ function Plan({ state, setState, onEdit }) {
               </h3>
               <ul className="acts">
                 {items.map((x) => (
-                  <ActionItem key={x.id} item={x} done={Boolean(state.d[x.id])} onToggle={() => toggle(x.id)} existing={covered(x)} />
+                  <ActionItem key={x.id} item={x} done={Boolean(state.d[x.id])} onToggle={() => toggle(x.id)} existing={covered(x)} vis={vis} />
                 ))}
               </ul>
             </div>
@@ -498,7 +530,7 @@ function Plan({ state, setState, onEdit }) {
             </summary>
             <ul className="acts">
               {verifyItems.map((x) => (
-                <ActionItem key={x.id} item={x} done={Boolean(state.d[x.id])} onToggle={() => toggle(x.id)} existing={covered(x)} />
+                <ActionItem key={x.id} item={x} done={Boolean(state.d[x.id])} onToggle={() => toggle(x.id)} existing={covered(x)} vis={vis} />
               ))}
             </ul>
           </details>
@@ -585,7 +617,7 @@ export default function App() {
   const hasAnswers = Object.keys(state.a).length > 0;
   const complete = QUESTIONS.every((q) => {
     const v = state.a[q.id];
-    if (q.type === 'multi') return q.required ? Array.isArray(v) && v.length > 0 : true;
+    if (q.type === 'multi') return Array.isArray(v) && v.length > 0;
     return Boolean(v);
   });
 
