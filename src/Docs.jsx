@@ -184,6 +184,14 @@ export default function Docs({ answers, complete, onBack, onIntake }) {
             </select>
           </label>
         </div>
+        <div className="remindbox">
+          <p>
+            <strong>Review reminder.</strong> Download a calendar reminder for the document you are viewing. It repeats every {f.months} months, alerts you two weeks before, and lists the events that should trigger an earlier review.
+          </p>
+          <button type="button" className="btn" onClick={reminder}>
+            Add review reminder (.ics)
+          </button>
+        </div>
       </section>
 
       <div className="doctabs" role="tablist" aria-label="Documents">
