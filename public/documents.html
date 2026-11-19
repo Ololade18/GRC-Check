@@ -186,10 +186,20 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 .kicker { color: var(--wine-ink); }
 .nav a[aria-current="page"] { background: var(--wine); border-color: var(--wine); color: var(--on-wine); }
 .nav a.lbl,.nav a.lbl:hover{padding:0;border:0;background:none;border-radius:0;font-size:.95rem;font-weight:600;letter-spacing:.08em;text-decoration:none}.nav a.lbl:hover{color:var(--fg)}
+.nav .navlinks{display:contents}.nav .menu{display:none}
+@media (max-width:760px){.nav{position:relative}.nav .menu{display:inline-flex;flex-direction:column;justify-content:center;gap:4px;margin-left:auto;width:2.6rem;height:2.6rem;padding:0 .65rem;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);cursor:pointer}.nav .menu span{display:block;height:2px;border-radius:2px;background:var(--fg);transition:transform .2s,opacity .2s}.nav.open .menu span:nth-child(1){transform:translateY(6px) rotate(45deg)}.nav.open .menu span:nth-child(2){opacity:0}.nav.open .menu span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}.nav .navlinks{display:none;flex-basis:100%;flex-direction:column;align-items:stretch;gap:.4rem;padding:.6rem 0 .3rem}.nav.open .navlinks{display:flex}.nav .navlinks a,.nav .navlinks .tt{padding:.7rem 1rem;font-size:1rem;border-radius:10px;text-align:left;margin-left:0}.nav .menu:focus-visible{outline:2px solid var(--focus);outline-offset:2px}}
 </style>
 
 <div class="wrap">
-  <nav class="nav" aria-label="ÌLÀNÀ tools"><a class="lbl" href="/" aria-label="ÌLÀNÀ home">ÌLÀNÀ</a><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/#terms">Terms</a><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents" aria-current="page">Document checklist</a><a href="/ai-vendor">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
+  <nav class="nav" aria-label="ÌLÀNÀ tools"><a class="lbl" href="/" aria-label="ÌLÀNÀ home">ÌLÀNÀ</a><button type="button" class="menu" id="menuBtn" aria-expanded="false" aria-controls="navlinks" aria-label="Open menu"><span></span><span></span><span></span></button><div class="navlinks" id="navlinks"><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/#terms">Terms</a><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents" aria-current="page">Document checklist</a><a href="/ai-vendor">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></div></nav>
+<script>
+(function(){var n=document.querySelector('.nav'),b=document.getElementById('menuBtn');if(!n||!b)return;
+function set(o){n.classList.toggle('open',o);b.setAttribute('aria-expanded',o?'true':'false');b.setAttribute('aria-label',o?'Close menu':'Open menu');}
+b.addEventListener('click',function(){set(!n.classList.contains('open'));});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});
+})();
+</script>
+
 <script>
 (function () {
   var KEY = 'grc-theme', root = document.documentElement, btn = document.getElementById('themeBtn');

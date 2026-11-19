@@ -89,8 +89,19 @@ function Nav({ theme, onTheme, page, onHome }) {
     ['/documents', 'Document checklist'],
     ['/ai-vendor', 'AI vendor check'],
   ];
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const close = () => setOpen(false);
+    const key = (e) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('hashchange', close);
+    window.addEventListener('keydown', key);
+    return () => {
+      window.removeEventListener('hashchange', close);
+      window.removeEventListener('keydown', key);
+    };
+  }, []);
   return (
-    <nav className="nav" aria-label="ÌLÀNÀ tools">
+    <nav className={'nav' + (open ? ' open' : '')} aria-label="ÌLÀNÀ tools">
       <a
         className="lbl"
         href="/"
@@ -107,6 +118,12 @@ function Nav({ theme, onTheme, page, onHome }) {
       >
         ÌLÀNÀ
       </a>
+      <button type="button" className="menu" aria-expanded={open} aria-controls="navlinks" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen((o) => !o)}>
+        <span />
+        <span />
+        <span />
+      </button>
+      <div className="navlinks" id="navlinks" onClick={(e) => e.target.closest('a') && setOpen(false)}>
       <a href="/" aria-current={page === 'start' ? 'page' : undefined}>
         Start here
       </a>
@@ -124,6 +141,7 @@ function Nav({ theme, onTheme, page, onHome }) {
       <button type="button" className="tt" onClick={onTheme} aria-label={'Switch to ' + (theme === 'light' ? 'dark' : 'light') + ' theme'}>
         {theme === 'light' ? 'Dark mode' : 'Light mode'}
       </button>
+      </div>
     </nav>
   );
 }

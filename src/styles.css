@@ -1059,25 +1059,24 @@ mark.ph {
 .lp-nav { max-width: 72rem; margin: 0 auto; padding-top: 1rem; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
 .lp-nav .nav { margin-bottom: 0; }
 .lp-page .lp .lpw { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
-@media (max-width: 700px) {
-  .lp-nav .nav { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.5rem; scrollbar-width: none; }
-  .lp-nav .nav > * { flex: 0 0 auto; }
-  .lp-nav .nav::-webkit-scrollbar { display: none; }
-}
 
-.remindbox {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem 1.25rem;
-  margin-top: 1rem;
-  padding: 0.8rem 1rem;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--gold);
-  border-radius: 10px;
-  background: var(--surface);
-  font-size: 0.9rem;
-  color: var(--muted);
+/* Navigation: hamburger on small screens */
+.nav .navlinks { display: contents; }
+.nav .menu { display: none; }
+.lp .lpfine { padding-bottom: 2.5rem; }
+@media (max-width: 760px) {
+  .nav { position: relative; }
+  .nav .menu {
+    display: inline-flex; flex-direction: column; justify-content: center; gap: 4px;
+    margin-left: auto; width: 2.6rem; height: 2.6rem; padding: 0 .65rem;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); cursor: pointer;
+  }
+  .nav .menu span { display: block; height: 2px; border-radius: 2px; background: var(--fg); transition: transform .2s, opacity .2s; }
+  .nav.open .menu span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .nav.open .menu span:nth-child(2) { opacity: 0; }
+  .nav.open .menu span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+  .nav .navlinks { display: none; flex-basis: 100%; flex-direction: column; align-items: stretch; gap: .4rem; padding: .6rem 0 .3rem; }
+  .nav.open .navlinks { display: flex; }
+  .nav .navlinks a, .nav .navlinks .tt { padding: .7rem 1rem; font-size: 1rem; border-radius: 10px; text-align: left; margin-left: 0; }
+  .nav .menu:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 }
-.remindbox p { flex: 1 1 22rem; margin: 0; }
-.remindbox strong { color: var(--fg); }

@@ -320,9 +320,11 @@ export default function Landing({ onStart, hasAnswers, onResume }) {
         </div>
       </section>
 
+      <div className="lpw">
       <p className="lpfine">
         Guidance to help you get started, not legal advice. Framework references are kept at topic level on purpose, so check the current official requirements before you certify. Not sure what a word means? See the <a href="/#terms">plain-English terms</a>.
       </p>
+      </div>
     </div>
   );
 }
