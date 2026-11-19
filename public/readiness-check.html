@@ -104,6 +104,13 @@ h1 { margin: 0; font: 600 clamp(2.1rem, 6vw, 3.1rem)/1.08 var(--font-display); t
 .band-text { flex: 1 1 16rem; min-width: 0; }
 .band { margin: 0; font: 600 1.375rem/1.2 var(--font-display); }
 .band-note { margin: .25rem 0 0; color: var(--muted); }
+.mand { margin: 1rem 0 0; padding: .75rem 1rem; border: 1px solid var(--brick); border-left-width: 5px; border-radius: 10px; background: var(--surface); }
+.mand[hidden] { display: none; }
+.mand strong { color: var(--brick); }
+.mand p { margin: 0; }
+.mand ul { margin: .4rem 0 0; padding-left: 1.1rem; }
+.mand .big { font: 600 1.05rem/1.3 var(--font-display); margin-bottom: .25rem; }
+.score-label { margin: .35rem 0 0; font-size: .85rem; color: var(--muted); }
 
 .meter { position: relative; height: 10px; background: var(--surface-2); border-radius: 5px; margin-bottom: 1.5rem; }
 .meter-fill { position: absolute; inset: 0 auto 0 0; background: var(--gold); border-radius: 5px; transition: width .3s ease; }
@@ -200,10 +207,11 @@ textarea#fallback { width: 100%; min-height: 8rem; margin-top: .75rem; backgroun
 
 .kicker { color: var(--wine-ink); }
 .nav a[aria-current="page"] { background: var(--wine); border-color: var(--wine); color: var(--on-wine); }
+.nav a.lbl,.nav a.lbl:hover{padding:0;border:0;background:none;border-radius:0;font-size:.95rem;font-weight:600;letter-spacing:.08em;text-decoration:none}.nav a.lbl:hover{color:var(--fg)}
 </style>
 
 <div class="wrap">
-  <nav class="nav" aria-label="ÌLÀNÀ tools"><span class="lbl">ÌLÀNÀ</span><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/readiness-check" aria-current="page">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
+  <nav class="nav" aria-label="ÌLÀNÀ tools"><a class="lbl" href="/" aria-label="ÌLÀNÀ home">ÌLÀNÀ</a><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/#terms">Terms</a><a href="/readiness-check" aria-current="page">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
 <script>
 (function () {
   var KEY = 'grc-theme', root = document.documentElement, btn = document.getElementById('themeBtn');
@@ -249,6 +257,8 @@ textarea#fallback { width: 100%; min-height: 8rem; margin-top: .75rem; backgroun
         <p class="band-note" id="bandNote"></p>
       </div>
     </div>
+    <p class="score-label">This is a weighted readiness score. It is not a pass mark. A certification audit also needs every mandatory requirement in place.</p>
+    <div class="mand" id="mand" role="status" hidden></div>
     <div class="meter" role="img" aria-label="Readiness meter with thresholds at 35, 65 and 85 percent" id="meter">
       <div class="meter-fill" id="meterFill"></div>
       <span class="tick" style="left:35%"></span><span class="tick" style="left:65%"></span><span class="tick" style="left:85%"></span>
@@ -503,9 +513,11 @@ textarea#fallback { width: 100%; min-height: 8rem; margin-top: .75rem; backgroun
 
   function bandFor(c) {
     if (c.rated === 0) return { t: 'Rate items to see your readiness', n: 'Start with the Required items in clauses 4 to 10.' };
-    if (c.score >= 85 && c.blockers === 0) return { t: 'Ready for audit', n: 'Most items are evidenced. Keep records current and run a final internal review.' };
-    if (c.score >= 65) return { t: 'Nearly ready', n: c.blockers > 0
-      ? c.blockers + (c.blockers === 1 ? ' required item still needs' : ' required items still need') + ' work before a certification audit.'
+    // A high score never overrides missing mandatory requirements.
+    if (c.blockers > 0 && c.score >= 65) return { t: 'Not ready: mandatory gaps', n: 'The score is ' + pct(c.score) + '%, but ' + c.blockers + (c.blockers === 1 ? ' mandatory requirement is' : ' mandatory requirements are') + ' missing or incomplete. An auditor would raise a nonconformity for each, so close these first.' };
+    if (c.score >= 85 && c.reqOpen === 0) return { t: 'Ready for audit', n: 'Every mandatory requirement is evidenced. Keep records current and run a final internal review.' };
+    if (c.score >= 65) return { t: 'Nearly ready', n: c.reqOpen > 0
+      ? c.reqOpen + (c.reqOpen === 1 ? ' mandatory requirement is' : ' mandatory requirements are') + ' in place but not yet evidenced. Collect the proof before a certification audit.'
       : 'Close the remaining gaps and collect evidence for items that are in place.' };
     if (c.score >= 35) return { t: 'Building', n: 'Core elements are partly in place. Focus on the Required items first.' };
     return { t: 'Early stage', n: 'Start with scope, policy, risk method and the Statement of Applicability.' };
@@ -539,6 +551,18 @@ textarea#fallback { width: 100%; min-height: 8rem; margin-top: .75rem; backgroun
     el('stStale').textContent = c.stale;
     el('stReq').textContent = c.reqOpen + ' of ' + c.reqTotal;
     el('example').hidden = !state.ex;
+    var m = el('mand');
+    if (c.rated === 0 || c.reqOpen === 0) { m.hidden = true; m.innerHTML = ''; }
+    else {
+      var missing = ITEMS.filter(function (it) { return it.req && (eff(it) || 0) < 3; }).sort(function (a, b) { return (eff(a) || 0) - (eff(b) || 0) || a.idx - b.idx; });
+      var items = missing.slice(0, 5).map(function (it) {
+        return '<li>' + it.r + ': ' + it.q + ' <em>(' + ((eff(it) || 0) < 2 ? 'missing or incomplete' : 'in place, not evidenced') + ')</em></li>';
+      }).join('');
+      m.innerHTML = '<p class="big"><strong>Mandatory requirements evidenced: ' + (c.reqTotal - c.reqOpen) + ' of ' + c.reqTotal + '</strong></p>' +
+        '<p>Do not read the score above as assurance. ' + c.reqOpen + (c.reqOpen === 1 ? ' mandatory requirement is' : ' mandatory requirements are') + ' not yet evidenced, and ' + c.blockers + (c.blockers === 1 ? ' is' : ' are') + ' missing or incomplete.</p>' +
+        '<ul>' + items + '</ul>' + (missing.length > 5 ? '<p>And ' + (missing.length - 5) + ' more. They are marked Required in the lists below.</p>' : '');
+      m.hidden = false;
+    }
 
     AREAS.forEach(function (ar) {
       var p = c.per[ar.id], s = p.sw ? pct(p.sv / p.sw * 100) : 0;
@@ -582,7 +606,7 @@ textarea#fallback { width: 100%; min-height: 8rem; margin-top: .75rem; backgroun
   function actionText() {
     var c = calc(), b = bandFor(c), g = gapsList();
     var out = ['ISO/IEC 27001:2022 audit readiness: ' + pct(c.score) + '% (' + b.t + ')',
-      c.rated + ' of ' + ITEMS.length + ' items rated. Required items not yet evidenced: ' + c.reqOpen + ' of ' + c.reqTotal + '. Evidenced items with a missing or old review: ' + c.stale + '.',
+      c.rated + ' of ' + ITEMS.length + ' items rated. Mandatory requirements evidenced: ' + (c.reqTotal - c.reqOpen) + ' of ' + c.reqTotal + (c.reqOpen > 0 ? ' (the score is not a pass mark while any are open)' : '') + '. Evidenced items with a missing or old review: ' + c.stale + '.',
       '', 'Priority actions'];
     g.forEach(function (it, i) {
       out.push((i + 1) + '. [' + it.r + '] ' + nextStep(it, state.a[it.id]) + (it.req ? ' (required)' : ''));

@@ -252,8 +252,8 @@ export function assessFrameworks(a) {
       tone: 'now',
       label: 'Do now',
       why: has(a, 'sells', 'public')
-        ? 'It is often required for public sector contracts, and it is the quickest recognised certificate to win.'
-        : 'Clients are asking for security assurance, and this is the quickest recognised certificate to win.',
+        ? 'It is often required for public sector contracts, and it is the quickest recognised certificate to win. The technical basics are in your first 30 days and the certificate follows in days 31 to 60.'
+        : 'Clients are asking for security assurance, and this is the quickest recognised certificate to win. The technical basics are in your first 30 days and the certificate follows in days 31 to 60.',
     };
   } else if (isLarge(a) && !has(a, 'certs', 'iso27001')) {
     out.ce = {
@@ -356,7 +356,6 @@ export const ACTIONS = [
     ],
     evidence: 'A short note or policy section naming the role.',
     fw: {
-      ndpa: 'Data processors and cross-border transfers',
       ndpa: 'Data Protection Officer and accountability',
       ukgdpr: 'Accountability (Art. 5(2) and Art. 24)',
       ce: '',
@@ -954,8 +953,213 @@ export const ACTIONS = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Why each action matters: is it a legal requirement, a contract / tender /
+// audit expectation, or good practice, and what happens if you skip it.
+// direct: true  = a duty in the law itself.  Otherwise the law is only
+// supported by the action ("Supports a legal duty").
+// All legal references are topic level and should be checked against current
+// ICO and NDPC guidance.
+// ---------------------------------------------------------------------------
+const assure = (a) =>
+  a.asked === 'yes' ||
+  has(a, 'sells', 'business') ||
+  has(a, 'sells', 'public') ||
+  (Array.isArray(a.goal) && (a.goal.includes('clients') || a.goal.includes('tender')));
+const ce = (a) => has(a, 'region', 'uk') && (!has(a, 'certs', 'none') || assure(a));
+
+const META = {
+  owner: {
+    uk: 'Accountability (UK GDPR Art. 5(2) and 24)',
+    ng: 'Accountability under the NDPA',
+    direct: true,
+    deal: (a) => (assure(a) ? 'ISO 27001 (clause 5.3) and most security questionnaires ask who is responsible.' : ''),
+    risk: 'Nobody is accountable, so tasks slip. You cannot show a regulator, client or auditor who is in charge, and that weakens every other answer you give them.',
+  },
+  policy: {
+    uk: 'Appropriate measures and policies (UK GDPR Art. 24 and 32)',
+    ng: 'Appropriate technical and organisational measures under the NDPA',
+    deal: (a) => (assure(a) ? 'Security questionnaires, tenders and ISO 27001 audits nearly always ask to see it.' : ''),
+    risk: 'Staff have no clear rules, and you have nothing to show a client or auditor. A missing policy is one of the quickest ways to fail a security questionnaire and lose the contract.',
+  },
+  assets: {
+    uk: 'Supports your records of processing (UK GDPR Art. 30)',
+    ng: 'Supports your records of processing under the NDPA',
+    deal: () => 'Auditors expect it. ISO 27001 requires an inventory of assets (Annex A 5.9), and Cyber Essentials needs every device and service in scope.',
+    risk: 'Devices and systems you have not listed do not get patched or protected, the scope of any certificate is unclear, and an auditor will usually ask for this list first.',
+  },
+  mfa: {
+    uk: 'Security of processing (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (ce(a) || assure(a) ? 'Cyber Essentials requires it for cloud services, and many clients now ask for it in questionnaires.' : ''),
+    risk: 'One stolen password can hand over email or cloud accounts. That is among the most common ways small organisations are breached, and a breach of personal data may have to be reported.',
+  },
+  admin: {
+    uk: 'Security of processing (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (ce(a) || assure(a) ? 'Cyber Essentials checks user access control and admin rights.' : ''),
+    risk: 'Everyday accounts with admin rights let malware or one mistake reach everything.',
+  },
+  updates: {
+    uk: 'Security of processing (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (ce(a) || assure(a) ? 'Cyber Essentials requires supported software, with high and critical fixes applied promptly.' : ''),
+    risk: 'Known flaws stay open and are exploited quickly. Unpatched software is a recurring cause in breaches that regulators investigate.',
+  },
+  malware: {
+    uk: 'Security of processing (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (ce(a) || assure(a) ? 'Cyber Essentials includes malware protection on every in-scope device.' : ''),
+    risk: 'A single infected laptop can lock or leak your files, with downtime, cost and possibly a reportable breach.',
+  },
+  firewall: {
+    uk: 'Security of processing (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (ce(a) || assure(a) ? 'Cyber Essentials checks firewalls and boundary settings.' : ''),
+    risk: 'Default passwords and open settings are easy to find and use, so attackers reach your network without any skill.',
+  },
+  personaldata: {
+    uk: 'Records of processing and lawful basis (UK GDPR Art. 5, 6 and 30)',
+    ng: 'Lawful basis and records of processing under the NDPA',
+    direct: true,
+    deal: () => 'Clients and auditors ask what personal data you hold and where it goes.',
+    risk: 'You cannot meet your other data protection duties if you do not know what you hold. It is one of the first things the ICO or NDPC asks for in an investigation.',
+  },
+  ndpcreg: {
+    ng: 'Registration and annual returns where you are a data controller or processor of major importance (check current NDPC guidance)',
+    direct: true,
+    risk: 'Operating without a registration or return you were required to make can lead to NDPC enforcement and penalties, and it undermines trust with Nigerian clients and regulators.',
+  },
+  aipolicy: {
+    uk: 'Supports security and processor duties when staff put personal data into AI tools (UK GDPR Art. 5(1)(f), 28)',
+    ng: 'Supports appropriate security measures when AI tools handle personal data',
+    deal: (a) => (assure(a) ? 'Clients increasingly ask for it, and ISO 42001 (clause 5.2) requires an AI policy.' : ''),
+    risk: 'Staff paste client or personal data into public AI tools without knowing it is a risk. That can be a breach of confidentiality, of contract and of data protection law.',
+  },
+  secureconfig: {
+    uk: 'Security of processing (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (ce(a) || assure(a) ? 'Cyber Essentials checks secure configuration.' : ''),
+    risk: 'Unused accounts, software and default settings give attackers extra ways in.',
+  },
+  jml: {
+    uk: 'Security of processing and access control (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (assure(a) ? 'ISO 27001 expects joiner, mover and leaver controls, and questionnaires ask about them.' : ''),
+    risk: 'Former staff keep access to systems and data, and new starters are given far more than they need.',
+  },
+  byod: {
+    uk: 'Security of processing (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (ce(a) ? 'Cyber Essentials brings personal devices used for work into scope.' : ''),
+    risk: 'Personal phones and laptops that hold work data are outside your control, so a lost or infected device can become a breach.',
+  },
+  backups: {
+    uk: 'Availability and resilience of personal data (UK GDPR Art. 32(1)(b) and (c))',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (assure(a) ? 'ISO 27001 (Annex A 8.13) expects tested backups, and insurers and clients ask about them.' : ''),
+    risk: 'Ransomware or a failed device can destroy records for good. Losing access to personal data is itself a type of breach.',
+  },
+  training: {
+    uk: 'Security of processing (UK GDPR Art. 32)',
+    ng: 'Appropriate security measures under the NDPA',
+    deal: (a) => (assure(a) ? 'ISO 27001 requires awareness and training (Annex A 6.3), and questionnaires ask for proof.' : ''),
+    risk: 'Most breaches start with a person clicking or sending the wrong thing. Regulators treat untrained staff as a weakness in your measures.',
+  },
+  privacynotice: {
+    uk: 'Transparency (UK GDPR Art. 12 to 14)',
+    ng: 'Transparency and lawful basis under the NDPA',
+    direct: true,
+    risk: 'You must tell people how you use their data. A missing or unclear notice is a common basis for complaints to the ICO, and the highest fines (up to £17.5 million or 4% of turnover) apply to breaches of the core principles.',
+  },
+  rights: {
+    uk: 'Individual rights (UK GDPR Art. 15 to 22)',
+    ng: 'Data subject rights under the NDPA',
+    direct: true,
+    risk: 'Requests usually have to be answered within one month. Late or missing responses are a leading source of complaints to the ICO.',
+  },
+  incident: {
+    uk: 'Breach reporting within 72 hours (UK GDPR Art. 33 and 34)',
+    ng: 'Breach notification to the NDPC within 72 hours (check current NDPC guidance)',
+    direct: true,
+    deal: (a) => (assure(a) ? 'Clients often require you to tell them quickly if their data is involved, and ISO 27001 requires incident management.' : ''),
+    risk: 'Without a plan, the 72-hour deadline is easy to miss. Failing to report can bring its own fine (up to £8.7 million or 2% of turnover under UK GDPR) on top of the breach.',
+  },
+  suppliers: {
+    uk: 'Processors and contracts (UK GDPR Art. 28)',
+    ng: 'Data processors and cross-border transfers under the NDPA',
+    direct: true,
+    deal: (a) => (assure(a) ? 'Clients and ISO 27001 (Annex A 5.19 to 5.22) expect you to manage your suppliers.' : ''),
+    risk: 'You stay responsible for personal data your suppliers handle. A supplier breach becomes your breach, and without a contract you cannot show you took care.',
+  },
+  aiinventory: {
+    uk: 'Supports accountability when AI tools process personal data (UK GDPR Art. 5(2))',
+    ng: 'Supports accountability when AI tools process personal data',
+    deal: (a) => (assure(a) ? 'ISO 42001 expects an inventory of AI systems, and clients are starting to ask.' : ''),
+    risk: 'You cannot control or explain AI tools you do not know about, so personal data may flow into services nobody approved.',
+  },
+  dpia: {
+    uk: 'Data protection impact assessment for high-risk processing (UK GDPR Art. 35)',
+    ng: 'Data protection impact assessment under the NDPA (check current NDPC guidance)',
+    direct: true,
+    risk: 'Where processing is likely to be high risk, skipping the assessment is a breach in itself, and it hides risks you would want to fix first.',
+  },
+  airisk: {
+    deal: (a) => (assure(a) ? 'ISO 42001 requires AI risk assessment, and clients buying AI products now ask for it.' : ''),
+    risk: 'Risks in what you build or sell (bias, errors, misuse) surface later as complaints, lost clients or legal claims.',
+  },
+  riskreg: {
+    uk: 'Supports a risk-based approach to security (UK GDPR Art. 32)',
+    ng: 'Supports a risk-based approach to security under the NDPA',
+    deal: (a) => (assure(a) ? 'ISO 27001 (clause 6.1) requires risk assessment, and auditors treat a missing one as a major gap.' : ''),
+    risk: 'Risks stay in people’s heads, so they are not ranked, owned or revisited. Auditors and clients read that as a lack of control.',
+  },
+  questionnaire: {
+    deal: () => 'Clients and tender assessors send these in the middle of a sales cycle.',
+    risk: 'Slow or inconsistent answers delay deals, and one wrong answer can be held against you later.',
+  },
+  cecert: {
+    deal: (a) =>
+      has(a, 'sells', 'public')
+        ? 'Often required for public sector contracts, and many clients ask for it as proof of the basics.'
+        : 'Many clients accept it as proof of the technical basics.',
+    risk: 'You may be excluded from tenders or lose deals to competitors who hold the certificate.',
+  },
+  review: {
+    uk: 'Keeping measures under review (UK GDPR Art. 24)',
+    ng: 'Periodic review and compliance audit returns where required',
+    deal: (a) => (assure(a) ? 'ISO 27001 (clauses 9.1 and 9.3) requires monitoring and management review, and auditors check the dates.' : ''),
+    risk: 'Evidence goes stale. Documents nobody has reviewed in two years are not evidence, and audits fail on exactly that.',
+  },
+};
+
+// Returns the badges and risk text for one action, given the answers.
+export function basisFor(id, a) {
+  const m = META[id] || {};
+  const law = [];
+  if (holdsPersonal(a) || id === 'incident') {
+    if (m.uk && has(a, 'region', 'uk')) law.push(m.uk);
+    if (m.ng && has(a, 'region', 'nigeria')) law.push(m.ng);
+  }
+  const deal = m.deal ? m.deal(a) : '';
+  const badges = [];
+  if (law.length) badges.push({ kind: m.direct ? 'law' : 'law-support', label: m.direct ? 'Legal requirement' : 'Supports a legal duty' });
+  if (deal) badges.push({ kind: 'deal', label: 'Contract, tender or audit' });
+  if (!badges.length) badges.push({ kind: 'practice', label: 'Good practice' });
+  return { badges, law, deal, risk: m.risk || '' };
+}
+
+// Cyber Essentials marked "Do now" must not sit at the end of the plan.
+export function phaseFor(x, a) {
+  if (x.id === 'cecert') {
+    const v = assessFrameworks(a).ce;
+    if (v && v.tone === 'now') return 60;
+  }
+  return x.phase;
+}
+
 export function buildPlan(a) {
-  return ACTIONS.filter((x) => x.when(a));
+  return ACTIONS.filter((x) => x.when(a)).map((x) => ({ ...x, phase: phaseFor(x, a), basis: basisFor(x.id, a) }));
 }
 
 export const GOAL_LINES = {

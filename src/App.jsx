@@ -10,6 +10,8 @@ import {
   visibleFrameworks,
 } from './data.js';
 import Docs from './Docs.jsx';
+import Terms from './Terms.jsx';
+import Landing from './Landing.jsx';
 
 const KEY = 'start-here-v1';
 const THEME_KEY = 'grc-theme';
@@ -80,7 +82,7 @@ const safe = (v) => {
 
 const csvCell = (v) => '"' + safe(v).replace(/"/g, '""') + '"';
 
-function Nav({ theme, onTheme, page }) {
+function Nav({ theme, onTheme, page, onHome }) {
   const links = [
     ['/readiness-check', 'Readiness check'],
     ['/soa-builder', 'SoA builder'],
@@ -89,12 +91,30 @@ function Nav({ theme, onTheme, page }) {
   ];
   return (
     <nav className="nav" aria-label="ÌLÀNÀ tools">
-      <span className="lbl">ÌLÀNÀ</span>
+      <a
+        className="lbl"
+        href="/"
+        aria-label="ÌLÀNÀ home, back to the top"
+        onClick={(e) => {
+          if (window.location.pathname === '/' || window.location.pathname === '') {
+            e.preventDefault();
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            window.dispatchEvent(new Event('hashchange'));
+            window.scrollTo(0, 0);
+            if (onHome) onHome();
+          }
+        }}
+      >
+        ÌLÀNÀ
+      </a>
       <a href="/" aria-current={page === 'start' ? 'page' : undefined}>
         Start here
       </a>
       <a href="/#policies" aria-current={page === 'docs' ? 'page' : undefined}>
         Policy generator
+      </a>
+      <a href="/#terms" aria-current={page === 'terms' ? 'page' : undefined}>
+        Terms
       </a>
       {links.map(([h, t]) => (
         <a key={h} href={h}>
@@ -142,7 +162,9 @@ function Intro({ onStart, hasAnswers, onResume, region }) {
         several at once.
       </p>
       <ul className="points">
-        <li>No jargon, no sign-up, and nothing leaves your browser.</li>
+        <li>
+          No jargon, no sign-up, and nothing leaves your browser. New to the words? <a href="/#terms">Read the plain-English terms</a>.
+        </li>
         <li>Takes about three minutes.</li>
         <li>Guidance to get you moving, not legal advice.</li>
       </ul>
@@ -291,6 +313,11 @@ function ActionItem({ item, done, onToggle, existing, vis }) {
           <summary>
             <span className="act-title">{item.title}</span>
             <span className="meta">
+              {item.basis && item.basis.badges.map((b) => (
+                <span key={b.kind} className={'chip basis b-' + b.kind}>
+                  {b.label}
+                </span>
+              ))}
               <span className="chip">{item.effort}</span>
               <span className="chip">{item.owner}</span>
               {existing && <span className="chip have">You have this: review it</span>}
@@ -301,6 +328,35 @@ function ActionItem({ item, done, onToggle, existing, vis }) {
           </summary>
           <div className="act-body">
             <p>{item.why}</p>
+            {item.basis && (
+              <>
+                <h4>Is it required?</h4>
+                <ul className="basis-list">
+                  {item.basis.law.map((l) => (
+                    <li key={l}>
+                      <strong>{item.basis.badges[0].kind === 'law' ? 'Legal requirement.' : 'Supports a legal duty.'}</strong>{' '}
+                      {l.replace(/^Supports /, '').replace(/^./, (c) => c.toUpperCase())}.
+                    </li>
+                  ))}
+                  {item.basis.deal && (
+                    <li>
+                      <strong>Contract, tender or audit.</strong> {item.basis.deal}
+                    </li>
+                  )}
+                  {!item.basis.law.length && !item.basis.deal && (
+                    <li>
+                      <strong>Good practice.</strong> Not a legal or contractual requirement for you today, but it makes the rest of the plan stronger.
+                    </li>
+                  )}
+                </ul>
+                {item.basis.risk && (
+                  <>
+                    <h4>If you do not do it</h4>
+                    <p>{item.basis.risk}</p>
+                  </>
+                )}
+              </>
+            )}
             <h4>How to do it</h4>
             <ol>
               {item.how.map((h) => (
@@ -359,7 +415,7 @@ function Plan({ state, setState, onEdit }) {
       lines.push(p.title.toUpperCase());
       plan
         .filter((x) => x.phase === p.id)
-        .forEach((x) => lines.push((state.d[x.id] ? '[x] ' : '[ ] ') + x.title + ' (' + x.owner + ', ' + x.effort.toLowerCase() + ')'));
+        .forEach((x) => lines.push((state.d[x.id] ? '[x] ' : '[ ] ') + x.title + ' (' + x.owner + ', ' + x.effort.toLowerCase() + '; ' + x.basis.badges.map((b) => b.label).join(' and ').toLowerCase() + ')'));
       lines.push('');
     });
     lines.push('Guidance only, not legal advice.');
@@ -367,7 +423,7 @@ function Plan({ state, setState, onEdit }) {
   };
 
   const csv = () => {
-    const head = ['Phase', 'Action', 'Effort', 'Suggested owner', 'Done', 'Evidence to keep', 'UK GDPR', 'Cyber Essentials', 'ISO 27001', 'ISO 42001'];
+    const head = ['Phase', 'Action', 'Effort', 'Suggested owner', 'Done', 'Why it is needed', 'If you do not do it', 'Evidence to keep', 'UK GDPR', 'Cyber Essentials', 'ISO 27001', 'ISO 42001'];
     const rows = plan.map((x) =>
       [
         PHASES.find((p) => p.id === x.phase).title,
@@ -375,6 +431,8 @@ function Plan({ state, setState, onEdit }) {
         x.effort,
         x.owner,
         state.d[x.id] ? 'Yes' : 'No',
+        x.basis.badges.map((b) => b.label).join(' and '),
+        x.basis.risk,
         x.evidence,
         x.fw.ukgdpr,
         x.fw.ce,
@@ -468,6 +526,10 @@ function Plan({ state, setState, onEdit }) {
         </section>
       )}
 
+      <p className="disclaimer" role="note">
+        <strong>Guidance, not legal advice.</strong> This plan helps you decide where to start. It does not replace advice from a qualified professional, and legal references are kept at topic level. Check current official guidance (the ICO, the NCSC and the NDPC) before you rely on it.
+      </p>
+
       <section aria-labelledby="fw-h">
         <h2 id="fw-h">What applies to you</h2>
         {!has_uk(a) && (
@@ -499,6 +561,13 @@ function Plan({ state, setState, onEdit }) {
             </span>
           </div>
         </div>
+
+        <p className="legend" aria-label="What the labels mean">
+          <span><span className="chip basis b-law">Legal requirement</span>a duty in the law itself</span>
+          <span><span className="chip basis b-law-support">Supports a legal duty</span>helps you meet the law</span>
+          <span><span className="chip basis b-deal">Contract, tender or audit</span>clients or auditors expect it</span>
+          <span><span className="chip basis b-practice">Good practice</span>sensible, not required</span>
+        </p>
 
         <div className="filters" role="group" aria-label="Filter by framework">
           <button className={'fchip' + (filter === 'all' ? ' on' : '')} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
@@ -604,7 +673,7 @@ function Plan({ state, setState, onEdit }) {
       <p className="foot">
         Guidance to help you get started, not legal advice. Framework references are kept at topic level on purpose, so
         check the current official requirements before you certify. Your answers and progress stay in this browser and are
-        never sent anywhere.
+        never sent anywhere. Not sure what a word means? See the <a href="/#terms">plain-English terms</a>.
       </p>
     </div>
   );
@@ -625,6 +694,10 @@ export default function App() {
     save(state);
   }, [state]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [hash, state.step, state.qi]);
+
   const hasAnswers = Object.keys(state.a).length > 0;
   const complete = QUESTIONS.every((q) => {
     const v = state.a[q.id];
@@ -633,13 +706,19 @@ export default function App() {
   });
 
   const docsView = hash === '#policies';
+  const termsView = hash === '#terms';
+  const goHome = () => setState((s) => ({ ...s, step: 'intro' }));
+
   const leaveDocs = () => {
     window.history.replaceState(null, '', window.location.pathname + window.location.search);
     setHash('');
   };
 
   let view;
-  if (docsView) {
+  let landing = false;
+  if (termsView) {
+    view = <Terms onBack={leaveDocs} />;
+  } else if (docsView) {
     view = (
       <Docs
         answers={state.a}
@@ -656,8 +735,9 @@ export default function App() {
   } else if (state.step === 'intake') {
     view = <Intake state={state} setState={setState} onDone={() => setState((s) => ({ ...s, step: 'plan' }))} />;
   } else {
+    landing = true;
     view = (
-      <Intro
+      <Landing
         region={state.a && state.a.region}
         hasAnswers={hasAnswers}
         onStart={() => setState({ a: {}, d: {}, step: 'intake', qi: 0 })}
@@ -666,9 +746,20 @@ export default function App() {
     );
   }
 
+  if (landing) {
+    return (
+      <div className="lp-page">
+        <div className="lp-nav">
+          <Nav theme={theme} onTheme={toggleTheme} page="start" onHome={goHome} />
+        </div>
+        <main>{view}</main>
+      </div>
+    );
+  }
+
   return (
     <div className="wrap">
-      <Nav theme={theme} onTheme={toggleTheme} page={docsView ? 'docs' : 'start'} />
+      <Nav theme={theme} onTheme={toggleTheme} page={termsView ? 'terms' : docsView ? 'docs' : 'start'} onHome={goHome} />
       <main>{view}</main>
     </div>
   );

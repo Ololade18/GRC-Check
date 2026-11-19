@@ -28,6 +28,86 @@ const regulators = (a) => {
   return r.length ? r.join(' and ') : 'the data protection regulator';
 };
 
+const isLarge = (a) => a.size === 's5' || a.size === 's6';
+
+// "Who this is for": a short audience section placed after Purpose and Scope.
+const whoFor = (a, d, kind) => {
+  const large = isLarge(a);
+  const reach = large
+    ? ` It applies across all of our business units, offices and subsidiaries [list the entities covered]. Local procedures may add detail but must not fall below it.`
+    : '';
+  if (kind === 'isp') {
+    return S('Who this is for', [
+      P(`This policy is written for everyone at ${d.biz}, and each group has a different part to play.${reach}`),
+      UL([
+        'All staff, contractors and temporary workers: to know what is expected of you each day. The sections on accounts, devices, updates and reporting are the ones that affect you most.',
+        'Managers and team leaders: to approve access for your team, make sure people follow the rules, and pass on any concern straight away.',
+        `IT and technical staff: to carry out the technical controls in this policy and keep the evidence that they work.${large ? ' Local IT teams and regional offices follow the same standard.' : ''}`,
+        `${d.ownerName} and directors: to own this policy, keep it up to date and make sure the time and budget are there to follow it.`,
+        'Suppliers and third parties with access to our systems or information: to follow these rules, or equivalent ones, as set out in their contract.',
+        'Clients, auditors and regulators: to see how we protect information when they ask. Share the approved version, not a draft.',
+      ]),
+    ]);
+  }
+  if (kind === 'ai') {
+    return S('Who this is for', [
+      P(`This policy is written for everyone at ${d.biz} who might use, buy or build AI, including tools that have AI switched on by default.${reach}`),
+      UL([
+        'Everyone who uses AI tools for work: to know what you may and may not enter, and how to check what the tool gives you.',
+        'Managers: to approve requests for new tools and to make sure your team follows the rules.',
+        'People who buy or connect tools: to run the supplier checks before anything is approved.',
+        `${d.ownerName} and directors: to keep the tool register and the policy up to date.`,
+        'Contractors and suppliers working for us: to follow the same rules when they handle our information.',
+      ]),
+    ]);
+  }
+  return S('Who this is for', [
+    P(`This plan is written for everyone at ${d.biz}, because the first minutes of an incident depend on whoever notices it.${reach}`),
+    UL([
+      'Everyone: to recognise an incident and know how to report it, straight away and without blame.',
+      'The incident lead and deputy: to take charge, make decisions and keep the log.',
+      'IT and technical staff: to contain the problem and preserve evidence.',
+      'Directors and managers: to approve major decisions, talk to clients and sign off notifications.',
+      `${large ? 'The Data Protection Officer or privacy lead, legal and communications: ' : 'Whoever handles legal and communications advice: '}to judge whether a breach must be reported and what to say.`,
+    ]),
+  ]);
+};
+
+// "Review this when...": events that should trigger a review, not just the calendar.
+const reviewWhen = (a, d, kind) => {
+  const eu = has(a, 'region', 'eu');
+  const lead = `This ${kind === 'irp' ? 'plan' : 'policy'} is reviewed at least every ${d.months} months. It is also reviewed straight away when any of the following happens, even if the date has not come round yet:`;
+  const common = [
+    `The law or regulator guidance changes (for example from ${regulators(a)}).`,
+    `${d.ownerName} or another key owner leaves or changes role.`,
+    'We merge with, buy or sell part of a business, or open or close an office.',
+    'An audit, a client review or a certification body raises a finding.',
+  ];
+  const own =
+    kind === 'isp'
+      ? [
+          'We adopt a new system, cloud service or supplier that will hold our information.',
+          'A security incident or near miss shows a gap in these rules.',
+          'We start allowing personal devices, remote working or AI tools.',
+          'Our asset inventory changes significantly.',
+        ]
+      : kind === 'ai'
+      ? [
+          'We add a new AI tool, or an existing tool adds an AI feature.',
+          'An AI supplier changes its terms or how it uses our data.',
+          'An incident involves AI, or a client raises a concern about it.',
+          'We start building or selling AI.',
+          ...(eu ? ['The EU AI Act or other AI rules change in a way that affects what we do.'] : []),
+        ]
+      : [
+          'After every real incident and every practice exercise.',
+          'A contact in this plan changes, including the insurer, the incident lead or the deputy.',
+          'We sign a contract with an earlier notification deadline than we planned for.',
+          'We introduce a new system that holds personal data.',
+        ];
+  return S('Review this when…', [P(lead), UL([...own, ...common])]);
+};
+
 export const DOC_LIST = [
   { id: 'isp', label: 'Information security policy', file: 'information-security-policy' },
   { id: 'ai', label: 'AI use policy', file: 'ai-use-policy' },
@@ -64,6 +144,7 @@ export function buildISP(a, d) {
         }.`
       ),
     ]),
+    whoFor(a, d, 'isp'),
     S('Roles and responsibilities', [
       UL([
         `${d.ownerName} (${d.ownerRole}) is responsible for information security and data protection, and for keeping this policy up to date.`,
@@ -71,6 +152,24 @@ export function buildISP(a, d) {
         'Everyone is responsible for following this policy and for reporting any security concern straight away.',
       ]),
     ]),
+    S(
+      'Assets and inventory',
+      [
+        P(
+          'We keep an inventory of the devices, software, cloud services and information we rely on, and note which of them hold personal or client data. Every item has a named owner. Anything not on the list is not approved for use with our information.'
+        ),
+        UL([
+          'The inventory is kept in [location of the inventory] and maintained by [Name].',
+          'It is updated whenever we buy, set up, change or retire a device, system or service.',
+          'It is reviewed in full at least once a year, and the review is recorded.',
+        ]),
+        T(
+          ['Asset', 'Type', 'Owner', 'Holds personal or client data?', 'Location', 'Last reviewed'],
+          [['[Asset name]', '[Device, software, cloud service or information]', '[Name]', '[Yes or no]', '[Where it is kept]', '[Date]']]
+        ),
+      ],
+      'auditors for ISO 27001 and Cyber Essentials expect to see an inventory first'
+    ),
     S('Accounts, passwords and access', [
       UL([
         'Every person has their own account. Accounts and passwords are never shared.',
@@ -252,9 +351,10 @@ export function buildISP(a, d) {
   sections.push(
     S('Review and compliance', [
       P(
-        `This policy is reviewed at least every ${d.months} months, and sooner if something significant changes, such as a new system, a serious incident or a change in the law. Failure to follow it may lead to disciplinary action. Questions go to ${d.ownerName}.`
+        `Failure to follow this policy may lead to disciplinary action. Questions go to ${d.ownerName}.`
       ),
-    ])
+    ]),
+    reviewWhen(a, d, 'isp')
   );
 
   return {
@@ -290,6 +390,7 @@ export function buildAI(a, d) {
             `At the time of writing, ${d.biz} does not use AI tools for business work. This short policy sets the rule that applies until that changes.`
           ),
         ]),
+        whoFor(a, d, 'ai'),
         S('Rules', [
           UL([
             'Staff must not enter business, client or personal information into any AI tool, including free chatbots, unless it has been approved.',
@@ -297,9 +398,8 @@ export function buildAI(a, d) {
             `To request a tool, send ${d.ownerName} the name of the tool, what it is for and what information it would see. The request is assessed using our AI supplier checks before a decision is made.`,
           ]),
         ]),
-        S('Review', [
-          P(`This policy is reviewed at least every ${d.months} months, and whenever we decide to start using AI. Questions go to ${d.ownerName}.`),
-        ]),
+        S('Review', [P(`Questions about this policy go to ${d.ownerName}.`)]),
+        reviewWhen(a, d, 'ai'),
       ],
     };
   }
@@ -315,6 +415,7 @@ export function buildAI(a, d) {
         'This policy applies to everyone who works for us. It covers generative AI chatbots and assistants, AI features built into other software, browser extensions and plug-ins that use AI, and AI agents that can act on our behalf.'
       ),
     ]),
+    whoFor(a, d, 'ai'),
     S('Approved tools', [
       P(
         'Only tools on our AI tool register may be used for business work. The register records each tool, what it is used for, what information it may see and who approved it.'
@@ -406,9 +507,10 @@ export function buildAI(a, d) {
     ]),
     S('Roles and review', [
       P(
-        `${d.ownerName} (${d.ownerRole}) owns this policy and the AI tool register. The policy is reviewed at least every ${d.months} months, and sooner when we adopt a significant new tool or the law changes.`
+        `${d.ownerName} (${d.ownerRole}) owns this policy and the AI tool register.`
       ),
-    ])
+    ]),
+    reviewWhen(a, d, 'ai')
   );
 
   return {
@@ -471,6 +573,7 @@ export function buildIRP(a, d) {
         `This plan sets out what ${d.biz} does when something goes wrong with information or systems. It applies to everyone who works for us. Its aim is to limit harm, meet our legal duties and learn from what happened.`
       ),
     ]),
+    whoFor(a, d, 'irp'),
     S('What counts as an incident', [
       P('An incident is anything that threatens the security of our information or systems, or that might have. This includes near misses. Examples:'),
       UL(examples),
@@ -593,9 +696,10 @@ export function buildIRP(a, d) {
     ]),
     S('Practice and review', [
       P(
-        `We practise this plan at least once a year with a short scenario exercise. The plan is reviewed at least every ${d.months} months and after every serious incident. Please check the current reporting guidance from ${regulators(a)} when you review it.`
+        `We practise this plan at least once a year with a short scenario exercise. Please check the current reporting guidance from ${regulators(a)} when you review it.`
       ),
-    ])
+    ]),
+    reviewWhen(a, d, 'irp')
   );
 
   return {
@@ -701,4 +805,64 @@ export function docText(doc) {
 export function placeholderCount(doc) {
   const m = docText(doc).match(/\[[^\]]+\]/g);
   return m ? m.length : 0;
+}
+
+
+// ----- review reminder (.ics) -----
+
+export const reviewTriggers = (doc) => {
+  const sec = doc.sections.find((x) => x.title.startsWith('Review this when'));
+  const ul = sec && sec.blocks.find((b) => b.t === 'ul');
+  return ul ? ul.items : [];
+};
+
+const icsEsc = (t) => String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+const fold = (line) => {
+  const out = [];
+  let rest = line;
+  while (rest.length > 74) {
+    out.push(rest.slice(0, 74));
+    rest = ' ' + rest.slice(74);
+  }
+  out.push(rest);
+  return out.join('\r\n');
+};
+const ymd = (d) => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+
+// iso = date the document is approved (YYYY-MM-DD); months = review cycle.
+export function reviewICS(doc, biz, iso, months) {
+  const start = new Date(iso + 'T12:00:00');
+  if (isNaN(start)) return '';
+  const due = new Date(start);
+  due.setMonth(due.getMonth() + Number(months));
+  const next = new Date(due);
+  next.setDate(next.getDate() + 1);
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const desc =
+    'Time to review: ' + doc.title + ' (' + biz + ').\n\nReview sooner if any of these happen:\n' +
+    reviewTriggers(doc).map((t) => '- ' + t).join('\n') +
+    '\n\nGuidance from the plan tool. Not legal advice.';
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//ILANA//Review reminder//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:' + stamp + '-' + doc.title.replace(/[^a-z0-9]/gi, '').toLowerCase() + '@ilana',
+    'DTSTAMP:' + stamp,
+    'DTSTART;VALUE=DATE:' + ymd(due),
+    'DTEND;VALUE=DATE:' + ymd(next),
+    'RRULE:FREQ=MONTHLY;INTERVAL=' + Number(months),
+    'SUMMARY:' + icsEsc('Review: ' + doc.title),
+    'DESCRIPTION:' + icsEsc(desc),
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:' + icsEsc('Review due in two weeks: ' + doc.title),
+    'TRIGGER:-P14D',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ];
+  return lines.map(fold).join('\r\n') + '\r\n';
 }

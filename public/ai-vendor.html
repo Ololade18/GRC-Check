@@ -200,10 +200,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 
 .kicker { color: var(--wine-ink); }
 .nav a[aria-current="page"] { background: var(--wine); border-color: var(--wine); color: var(--on-wine); }
+.nav a.lbl,.nav a.lbl:hover{padding:0;border:0;background:none;border-radius:0;font-size:.95rem;font-weight:600;letter-spacing:.08em;text-decoration:none}.nav a.lbl:hover{color:var(--fg)}
 </style>
 
 <div class="wrap">
-  <nav class="nav" aria-label="ÌLÀNÀ tools"><span class="lbl">ÌLÀNÀ</span><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor" aria-current="page">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
+  <nav class="nav" aria-label="ÌLÀNÀ tools"><a class="lbl" href="/" aria-label="ÌLÀNÀ home">ÌLÀNÀ</a><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/#terms">Terms</a><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor" aria-current="page">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></nav>
 <script>
 (function () {
   var KEY = 'grc-theme', root = document.documentElement, btn = document.getElementById('themeBtn');

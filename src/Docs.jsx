@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BUILDERS, DOC_LIST, renderDoc, wordFile, docText, placeholderCount } from './docs.js';
+import { BUILDERS, DOC_LIST, renderDoc, wordFile, docText, placeholderCount, reviewICS } from './docs.js';
 
 const KEY = 'start-here-docs-v1';
 
@@ -94,6 +94,25 @@ export default function Docs({ answers, complete, onBack, onIntake }) {
     } catch (e) {
       setFallback(docText(doc));
       setNote('Download was blocked. Copy the text below instead.');
+    }
+  };
+
+  const reminder = () => {
+    try {
+      const ics = reviewICS(doc, f.biz.trim() || 'your business', f.date, f.months);
+      if (!ics) throw new Error('no date');
+      const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const el = document.createElement('a');
+      el.href = url;
+      el.download = slug(f.biz) + '-' + meta.file + '-review-reminder.ics';
+      document.body.appendChild(el);
+      el.click();
+      el.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setNote('Reminder downloaded. Open the file to add it to Outlook, Google Calendar or Apple Calendar. It repeats every ' + f.months + ' months and alerts you two weeks before.');
+    } catch (e) {
+      setNote('The reminder could not be created. Check the date above and try again.');
     }
   };
 
@@ -203,6 +222,9 @@ export default function Docs({ answers, complete, onBack, onIntake }) {
         </button>
         <button className="btn" onClick={copy}>
           Copy as text
+        </button>
+        <button className="btn" onClick={reminder}>
+          Add review reminder (.ics)
         </button>
         <p className="note" role="status">
           {note}
