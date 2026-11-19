@@ -1,10 +1,10 @@
 import React from 'react';
 
 // Front page. Shown before the questions. Start buttons open the intake.
-export default function Landing({ onStart, hasAnswers, onResume, region }) {
-  const r = Array.isArray(region) ? region : [];
-  const uk = r.length === 0 || r.includes('uk');
-  const ng = r.length === 0 || r.includes('nigeria');
+export default function Landing({ onStart, hasAnswers, onResume }) {
+  // The front page always shows all five frameworks, whatever was saved from an earlier visit.
+  const uk = true;
+  const ng = true;
   const fws = [];
   if (uk) fws.push({ k: 'ukgdpr', n: 'UK GDPR', long: 'UK GDPR' });
   if (ng) fws.push({ k: 'ndpa', n: 'NDPA', long: 'the Nigeria Data Protection Act' });
