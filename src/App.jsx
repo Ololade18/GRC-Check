@@ -90,14 +90,23 @@ function Nav({ theme, onTheme, page, onHome }) {
     ['/ai-vendor', 'AI vendor check'],
   ];
   const [open, setOpen] = useState(false);
+  const [tools, setTools] = useState(false);
   useEffect(() => {
-    const close = () => setOpen(false);
-    const key = (e) => e.key === 'Escape' && setOpen(false);
+    const close = () => {
+      setOpen(false);
+      setTools(false);
+    };
+    const key = (e) => e.key === 'Escape' && close();
+    const away = (e) => {
+      if (!e.target.closest || !e.target.closest('.navtools')) setTools(false);
+    };
     window.addEventListener('hashchange', close);
     window.addEventListener('keydown', key);
+    document.addEventListener('click', away);
     return () => {
       window.removeEventListener('hashchange', close);
       window.removeEventListener('keydown', key);
+      document.removeEventListener('click', away);
     };
   }, []);
   return (
@@ -133,11 +142,18 @@ function Nav({ theme, onTheme, page, onHome }) {
       <a href="/#terms" aria-current={page === 'terms' ? 'page' : undefined}>
         Terms
       </a>
-      {links.map(([h, t]) => (
-        <a key={h} href={h}>
-          {t}
-        </a>
-      ))}
+      <div className={'navtools' + (tools ? ' open' : '')}>
+        <button type="button" className="toolbtn" aria-haspopup="true" aria-expanded={tools} onClick={() => setTools((t) => !t)}>
+          Tools
+        </button>
+        <div className="toolmenu">
+          {links.map(([h, t]) => (
+            <a key={h} href={h}>
+              {t}
+            </a>
+          ))}
+        </div>
+      </div>
       <button type="button" className="tt" onClick={onTheme} aria-label={'Switch to ' + (theme === 'light' ? 'dark' : 'light') + ' theme'}>
         {theme === 'light' ? 'Dark mode' : 'Light mode'}
       </button>
@@ -767,18 +783,26 @@ export default function App() {
   if (landing) {
     return (
       <div className="lp-page">
-        <div className="lp-nav">
-          <Nav theme={theme} onTheme={toggleTheme} page="start" onHome={goHome} />
-        </div>
+        <header className="topbar">
+          <div className="topbar-in lp-in">
+            <Nav theme={theme} onTheme={toggleTheme} page="start" onHome={goHome} />
+          </div>
+        </header>
         <main>{view}</main>
       </div>
     );
   }
 
   return (
-    <div className="wrap">
-      <Nav theme={theme} onTheme={toggleTheme} page={termsView ? 'terms' : docsView ? 'docs' : 'start'} onHome={goHome} />
-      <main>{view}</main>
-    </div>
+    <>
+      <header className="topbar">
+        <div className="topbar-in">
+          <Nav theme={theme} onTheme={toggleTheme} page={termsView ? 'terms' : docsView ? 'docs' : 'start'} onHome={goHome} />
+        </div>
+      </header>
+      <div className="wrap">
+        <main>{view}</main>
+      </div>
+    </>
   );
 }

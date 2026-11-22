@@ -1,3 +1,9 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
 <title>AI Vendor Checker</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -203,10 +209,33 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
 .nav a.lbl,.nav a.lbl:hover{padding:0;border:0;background:none;border-radius:0;font-size:.95rem;font-weight:600;letter-spacing:.08em;text-decoration:none}.nav a.lbl:hover{color:var(--fg)}
 .nav .navlinks{display:contents}.nav .menu{display:none}
 @media (max-width:760px){.nav{position:relative}.nav .menu{display:inline-flex;flex-direction:column;justify-content:center;gap:4px;margin-left:auto;width:2.6rem;height:2.6rem;padding:0 .65rem;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);cursor:pointer}.nav .menu span{display:block;height:2px;border-radius:2px;background:var(--fg);transition:transform .2s,opacity .2s}.nav.open .menu span:nth-child(1){transform:translateY(6px) rotate(45deg)}.nav.open .menu span:nth-child(2){opacity:0}.nav.open .menu span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}.nav .navlinks{display:none;flex-basis:100%;flex-direction:column;align-items:stretch;gap:.4rem;padding:.6rem 0 .3rem}.nav.open .navlinks{display:flex}.nav .navlinks a,.nav .navlinks .tt{padding:.7rem 1rem;font-size:1rem;border-radius:10px;text-align:left;margin-left:0}.nav .menu:focus-visible{outline:2px solid var(--focus);outline-offset:2px}}
+
+/* ---- Header bar and Tools dropdown ---- */
+.topbar { margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px))); margin-bottom: 2rem; background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.topbar-in { max-width: calc(860px + 2 * max(16px, env(safe-area-inset-left, 0px))); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar-in.lp-unused { max-width: 72rem; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+.topbar .nav { margin: 0; padding: .9rem 0; gap: .5rem; }
+.topbar .nav a.lbl, .topbar .nav a.lbl:hover { font: 800 1.2rem/1 'Manrope', system-ui, sans-serif; letter-spacing: .1em; color: var(--fg); margin-right: .75rem; }
+.nav .navtools { position: relative; }
+.nav .toolbtn { font: inherit; font-size: .875rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: .25rem .8rem .25rem .9rem; cursor: pointer; }
+.nav .toolbtn::after { content: ''; display: inline-block; width: .4rem; height: .4rem; margin-left: .5rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); }
+.nav .toolbtn:hover, .nav .navtools.open .toolbtn { border-color: var(--gold); }
+.nav .navtools.current .toolbtn { background: var(--wine); border-color: var(--wine); color: var(--on-wine); font-weight: 600; }
+.nav .toolbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.nav .toolmenu { display: none; position: absolute; top: calc(100% + .5rem); left: 0; z-index: 40; min-width: 13rem; flex-direction: column; gap: .25rem; padding: .4rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 18px 40px -18px rgba(0,0,0,.45); }
+.nav .navtools.open .toolmenu { display: flex; }
+.nav .toolmenu a { border: 0; background: transparent; border-radius: 8px; padding: .55rem .8rem; font-size: .9rem; white-space: nowrap; }
+.nav .toolmenu a:hover { background: var(--surface-2); }
+.nav .toolmenu a[aria-current="page"] { background: var(--wine); color: var(--on-wine); }
+@media (max-width: 760px) {
+  .topbar .nav { padding: .7rem 0; }
+  .nav .toolbtn { display: none; }
+  .nav .navtools { position: static; display: contents; }
+  .nav .toolmenu { display: contents; position: static; }
+}
 </style>
 
-<div class="wrap">
-  <nav class="nav" aria-label="ÌLÀNÀ tools"><a class="lbl" href="/" aria-label="ÌLÀNÀ home">ÌLÀNÀ</a><button type="button" class="menu" id="menuBtn" aria-expanded="false" aria-controls="navlinks" aria-label="Open menu"><span></span><span></span><span></span></button><div class="navlinks" id="navlinks"><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/#terms">Terms</a><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor" aria-current="page">AI vendor check</a><button type="button" class="tt" id="themeBtn">Light mode</button></div></nav>
+<header class="topbar"><div class="topbar-in"><nav class="nav" aria-label="ÌLÀNÀ tools"><a class="lbl" href="/" aria-label="ÌLÀNÀ home">ÌLÀNÀ</a><button type="button" class="menu" id="menuBtn" aria-expanded="false" aria-controls="navlinks" aria-label="Open menu"><span></span><span></span><span></span></button><div class="navlinks" id="navlinks"><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/#terms">Terms</a><div class="navtools current"><button type="button" class="toolbtn" aria-haspopup="true" aria-expanded="false">Tools</button><div class="toolmenu"><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents">Document checklist</a><a href="/ai-vendor" aria-current="page">AI vendor check</a></div></div><button type="button" class="tt" id="themeBtn">Light mode</button></div></nav></div></header>
 <script>
 (function(){var n=document.querySelector('.nav'),b=document.getElementById('menuBtn');if(!n||!b)return;
 function set(o){n.classList.toggle('open',o);b.setAttribute('aria-expanded',o?'true':'false');b.setAttribute('aria-label',o?'Close menu':'Open menu');}
@@ -214,7 +243,15 @@ b.addEventListener('click',function(){set(!n.classList.contains('open'));});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});
 })();
 </script>
-
+<script>
+(function(){var t=document.querySelector('.nav .navtools'),b=t&&t.querySelector('.toolbtn');if(!t||!b)return;
+function set(o){t.classList.toggle('open',o);b.setAttribute('aria-expanded',o?'true':'false');}
+b.addEventListener('click',function(e){e.stopPropagation();set(!t.classList.contains('open'));});
+document.addEventListener('click',function(e){if(!t.contains(e.target))set(false);});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});
+})();
+</script>
+<div class="wrap">
 <script>
 (function () {
   var KEY = 'grc-theme', root = document.documentElement, btn = document.getElementById('themeBtn');
@@ -308,7 +345,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);}
       <p class="sec-note">A short write-up with the rating, the red flags, the questions to send the vendor and the actions on your side.</p>
     </div>
     <textarea class="ta" id="summary" readonly aria-label="Review summary"></textarea>
-    <div class="tools">
+    <div class="navtools">
       <button type="button" class="btn primary" id="copySum">Copy summary</button>
       <button type="button" class="btn" id="csv">Download CSV</button>
       <span class="status" id="exStatus" role="status"></span>
@@ -317,7 +354,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);}
   </section>
 
   <section class="group">
-    <div class="tools"><button type="button" class="btn" id="reset">Clear all answers</button></div>
+    <div class="navtools"><button type="button" class="btn" id="reset">Clear all answers</button></div>
     <p class="foot">This is a screening aid. It is not an approval decision, a legal opinion or a security assessment, and a good score does not make a vendor safe. Verify answers against documents and contract terms. Which rules apply depends on your sector, your location and how you use the tool. Everything stays in this browser only.</p>
   </section>
 </div>
