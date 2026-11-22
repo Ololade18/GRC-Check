@@ -126,7 +126,7 @@ function Nav({ theme, onTheme, page, onHome }) {
         }}
       >
         <span className="lbl-word">ÌLÀNÀ</span>
-        <svg className="lbl-mark" viewBox="4 2 112 112" aria-hidden="true" focusable="false"><mask id="lm"><rect width="120" height="120" fill="#fff"/><g stroke="#000" strokeLinecap="round" fill="none"><path d="M60 92v9" strokeWidth="4.5"/><path d="M60 74v9" strokeWidth="3.4"/><path d="M60 58v9" strokeWidth="2.4"/></g></mask><path d="M42 106 L53 42 H67 L78 106 Z" mask="url(#lm)"/><path className="lm-h" d="M26 42H94"/><path className="lm-a" d="M45 13 L63 26"/></svg>
+        <svg className="lbl-mark" viewBox="4 2 112 112" aria-hidden="true" focusable="false"><mask id="lm" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120"><rect width="120" height="120" fill="#fff"/><g stroke="#000" strokeLinecap="round" fill="none"><path d="M60 90v11" strokeWidth="6.5"/><path d="M60 72v10" strokeWidth="5.2"/><path d="M60 56v9" strokeWidth="4"/></g></mask><path d="M42 106 L53 42 H67 L78 106 Z" mask="url(#lm)"/><path className="lm-h" d="M26 42H94"/><path className="lm-a" d="M45 13 L63 26"/></svg>
       </a>
       <button type="button" className="menu" aria-expanded={open} aria-controls="navlinks" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen((o) => !o)}>
         <span />
