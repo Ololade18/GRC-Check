@@ -6,40 +6,38 @@
 <style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" /><link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" /><link rel="apple-touch-icon" href="/apple-touch-icon.png" /><title>Document Checklist</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="/fonts.css" />
 <style>
 
 :root {
-  --bg: #121827;
-  --surface: #1A2133;
-  --surface-2: #2A2236;
+  --bg: #1d0c13;
+  --surface: #2a131c;
+  --surface-2: #371a26;
   --line: rgba(240, 226, 232, 0.16);
-  --fg: #F3ECEE;
-  --muted: #B7A9B4;
-  --gold: #E2825E; --wine: #9B2C52; --wine-ink: #E59AB1; --on-wine: #FFFFFF;
-  --on-gold: #1F0F0B;
+  --fg: #f3ece6;
+  --muted: #c2adb2;
+  --gold: #a9c9a4; --wine: #9B2C52; --wine-ink: #e8a3b8; --on-wine: #FFFFFF;
+  --on-gold: #10200f;
   --brick: #F4707D;
   --good: #5CC59A;
   --focus: #8DB8FF;
-  --font-display: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Bricolage Grotesque', Georgia, 'Times New Roman', serif;
+  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #FAF6F2; --surface: #FFFFFF; --surface-2: #F3E9E7;
-    --line: rgba(74, 28, 44, 0.16); --fg: #2B1B26; --muted: #6B5560;
-    --gold: #B24A2A; --wine: #7B1E3A; --wine-ink: #7B1E3A; --on-wine: #FFFFFF; --on-gold: #FFFFFF; --brick: #C2273D; --good: #2F7D55; --focus: #2B5FAE;
+    --bg: #f1f2ec; --surface: #fbfcf8; --surface-2: #e6e9dd;
+    --line: rgba(74, 28, 44, 0.16); --fg: #2a1118; --muted: #6a5a5d;
+    --gold: #6e1b34; --wine: #6e1b34; --wine-ink: #6e1b34; --on-wine: #FFFFFF; --on-gold: #FFFFFF; --brick: #C2273D; --good: #2F7D55; --focus: #2B5FAE;
     color-scheme: light;
   }
 }
 :root[data-theme="light"] {
-  --bg: #FAF6F2; --surface: #FFFFFF; --surface-2: #F3E9E7;
-  --line: rgba(74, 28, 44, 0.16); --fg: #2B1B26; --muted: #6B5560;
-  --gold: #B24A2A; --wine: #7B1E3A; --wine-ink: #7B1E3A; --on-wine: #FFFFFF; --on-gold: #FFFFFF; --brick: #C2273D; --good: #2F7D55; --focus: #2B5FAE;
+  --bg: #f1f2ec; --surface: #fbfcf8; --surface-2: #e6e9dd;
+  --line: rgba(74, 28, 44, 0.16); --fg: #2a1118; --muted: #6a5a5d;
+  --gold: #6e1b34; --wine: #6e1b34; --wine-ink: #6e1b34; --on-wine: #FFFFFF; --on-gold: #FFFFFF; --brick: #C2273D; --good: #2F7D55; --focus: #2B5FAE;
   color-scheme: light;
 }
 
@@ -229,9 +227,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px
   .nav a.lbl .lbl-mark { display: block; }
   .topbar .nav a.lbl { margin-right: 0; }
 }
+
+/* Theme toggle: icon only (sun in dark mode, moon in light mode) */
+.nav .tt { width: 2.4rem; height: 2.4rem; padding: 0; display: inline-grid; place-items: center; border-radius: 50%; line-height: 0; }
+.nav .tt svg { width: 1.2rem; height: 1.2rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 760px) { .nav .navlinks .tt { padding: 0; width: 2.6rem; height: 2.6rem; text-align: center; } }
 </style>
 
-<header class="topbar"><div class="topbar-in"><nav class="nav" aria-label="ÌLÀNÀ tools"><a class="lbl" href="/" aria-label="ÌLÀNÀ home"><span class="lbl-word">ÌLÀNÀ</span><svg class="lbl-mark" viewBox="4 2 112 112" aria-hidden="true" focusable="false"><mask id="lm" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120"><rect width="120" height="120" fill="#fff"/><g stroke="#000" stroke-linecap="round" fill="none"><path d="M60 90v11" stroke-width="6.5"/><path d="M60 72v10" stroke-width="5.2"/><path d="M60 56v9" stroke-width="4"/></g></mask><path d="M42 106 L53 42 H67 L78 106 Z" mask="url(#lm)"/><path class="lm-h" d="M26 42H94"/><path class="lm-a" d="M45 13 L63 26"/></svg></a><button type="button" class="menu" id="menuBtn" aria-expanded="false" aria-controls="navlinks" aria-label="Open menu"><span></span><span></span><span></span></button><div class="navlinks" id="navlinks"><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/#terms">Terms</a><div class="navtools current"><button type="button" class="toolbtn" aria-haspopup="true" aria-expanded="false">Tools</button><div class="toolmenu"><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents" aria-current="page">Document checklist</a><a href="/ai-vendor">AI vendor check</a></div></div><button type="button" class="tt" id="themeBtn">Light mode</button></div></nav></div></header>
+<header class="topbar"><div class="topbar-in"><nav class="nav" aria-label="ÌLÀNÀ tools"><a class="lbl" href="/" aria-label="ÌLÀNÀ home"><span class="lbl-word">ÌLÀNÀ</span><svg class="lbl-mark" viewBox="4 2 112 112" aria-hidden="true" focusable="false"><mask id="lm" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120"><rect width="120" height="120" fill="#fff"/><g stroke="#000" stroke-linecap="round" fill="none"><path d="M60 90v11" stroke-width="6.5"/><path d="M60 72v10" stroke-width="5.2"/><path d="M60 56v9" stroke-width="4"/></g></mask><path d="M42 106 L53 42 H67 L78 106 Z" mask="url(#lm)"/><path class="lm-h" d="M26 42H94"/><path class="lm-a" d="M45 13 L63 26"/></svg></a><button type="button" class="menu" id="menuBtn" aria-expanded="false" aria-controls="navlinks" aria-label="Open menu"><span></span><span></span><span></span></button><div class="navlinks" id="navlinks"><a href="/">Start here</a><a href="/#policies">Policy generator</a><a href="/#terms">Terms</a><div class="navtools current"><button type="button" class="toolbtn" aria-haspopup="true" aria-expanded="false">Tools</button><div class="toolmenu"><a href="/readiness-check">Readiness check</a><a href="/soa-builder">SoA builder</a><a href="/documents" aria-current="page">Document checklist</a><a href="/ai-vendor">AI vendor check</a></div></div><button type="button" class="tt" id="themeBtn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg></button></div></nav></div></header>
 <script>
 (function(){var n=document.querySelector('.nav'),b=document.getElementById('menuBtn');if(!n||!b)return;
 function set(o){n.classList.toggle('open',o);b.setAttribute('aria-expanded',o?'true':'false');b.setAttribute('aria-label',o?'Close menu':'Open menu');}
@@ -254,7 +257,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);}
   function stored() { try { var v = localStorage.getItem(KEY); return v === 'light' || v === 'dark' ? v : ''; } catch (e) { return ''; } }
   function system() { try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'; } catch (e) { return 'dark'; } }
   function current() { return root.getAttribute('data-theme') || system(); }
-  function label() { if (btn) { var next = current() === 'light' ? 'dark' : 'light'; btn.textContent = next === 'light' ? 'Light mode' : 'Dark mode'; btn.setAttribute('aria-label', 'Switch to ' + next + ' theme'); } }
+  function label() { if (btn) { var next = current() === 'light' ? 'dark' : 'light'; btn.innerHTML = next === 'light' ? '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.5 13.2A8.5 8.5 0 1 1 10.8 3.5a6.7 6.7 0 0 0 9.7 9.7z"/></svg>'; btn.setAttribute('aria-label', 'Switch to ' + next + ' theme'); } }
   var s = stored(); if (s) root.setAttribute('data-theme', s);
   label();
   if (btn) btn.addEventListener('click', function () {
